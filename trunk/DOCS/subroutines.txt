@@ -1,0 +1,40 @@
+LL.f95
+   LLcp
+   LLredor
+   LL3spinsRedor
+   LLtedor
+   LL
+
+PULSAR.f95
+   PULSAR
+   Main
+
+SUBROUTINES.f95
+   TRI
+   DIPOLAR
+   SELE 
+   PRINT
+   PREPARATION 
+   AMcalc
+   AM 
+   ORIENTATION 
+   AMdif 
+   EDGEA
+   EDGEB 
+   SPECTREA 
+   SPECTREB 
+   DIAG 
+   HTRIDI 
+   TQL2 
+   HTRIBK 
+   WIGNER 
+   FFT 
+   FFT1 
+   FAST 
+   FR4TR 
+   FORD1 
+   FORD2 
+   WIDTH 
+   TENT 
+   OPERATOR 
+   ZERO 
