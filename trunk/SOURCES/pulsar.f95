@@ -1,4 +1,4 @@
-!     Last change:  CF   18 Feb 2006    2:28 pm
+!     Last change:  CF   18 Feb 2006    7:46 pm
 ! File: $Id: pulsar.for, v 0.1
 ! ----------------------------------------------------------------------
 ! PULSAR Project
@@ -84,7 +84,7 @@ PROGRAM  PULSAR
 !==============
 CHARACTER*256 cl
 
-        CALL getcl(cl)                ! Get command line (input filename)
+        CALL GetArg(1, cl)            ! Get command line (input filename)
         OPEN(10,file=cl,status="old") ! Open this file for input
         CALL Main(cl)                 ! Call the main program
         CLOSE(10)                     ! Close the input file
