@@ -1,4 +1,4 @@
-!     Last change:  CF   15 Feb 2006    1:02 pm
+!     Last change:  CF   18 Feb 2006    2:28 pm
 ! File: $Id: pulsar.for, v 0.1
 ! ----------------------------------------------------------------------
 ! PULSAR Project
@@ -31,11 +31,14 @@
 !
 ! TODO:
 !   . Transform array in allocatable arrays
-!   . Write the following header in english
-!   . Transform in free form fortran syntax
 !
 ! ----------------------------------------------------------------------
 ! List of subroutines in the various files
+!
+!PULSAR.f95
+!----------
+!   PULSAR  Main program
+!   Main    Main subroutine
 !
 ! LL.f95
 !-------
@@ -44,11 +47,6 @@
 !   LL3spinsRedor
 !   LLtedor
 !   LL
-!
-!PULSAR.f95
-!----------
-!   PULSAR
-!   Main
 !
 !SUBROUTINES.f95
 !---------------
@@ -96,24 +94,39 @@ END PROGRAM
 
 SUBROUTINE Main()
 !================
-! Main subroutine
-!================
 
       USE common_module
+      USE constantes_module
 
-      DIMENSION NISPs(10),TL(61,30),Inorm1(16),Inorm2(16)
-      DIMENSION FIDX(32800),FIDY(32800),SPIX(32800),SPIY(32800)           
-      DIMENSION P(99999),Idec(9999),PHASEi(9999),Iref(9999)
-      DIMENSION RorTs(11,11),RoiTs(11,11),RorTi(11,11),RoiTi(11,11)      
-      DIMENSION JJ(20),Nphase(20),FASE(20),Level(0:20)         
+      REAL :: NISPs(10)
+      REAL :: TL(61,30)
+
+      REAL :: FIDX(32800) ! 32768+2? suffisant à vérifier
+      REAL :: FIDY(32800)
+      REAL :: SPIX(32800)
+      REAL :: SPIY(32800)
+      REAL :: P(99999)
+      INTEGER :: Idec(9999)
+      REAL :: PHASEi(9999)
+      INTEGER :: Iref(9999)
+      REAL :: RorTs(11,11)
+      REAL :: RoiTs(11,11)
+      REAL :: RorTi(11,11)
+      REAL :: RoiTi(11,11)
+      INTEGER :: JJ(20)
+      INTEGER :: Nphase(20)
+      REAL :: FASE(20)
+      INTEGER :: Level(0:20)
+
+      INTEGER :: Inorm1(16)
+      INTEGER :: Inorm2(16)
       DATA Inorm1/2154752,933774,589820,430020,338069,278417,236611,205703, &
                   181927,163068,147749,135059,124378,115254,107382,100517/
       DATA Inorm2/6122925,3121593,2088467,1568265,1255355,1046463,897112, &
                   785115,697918,628170,571061,523524,483263,448748,418821,392639/
 
-!      OPEN(20,file="res.txt",status="replace")
-!      OPEN(22,FILE="spectre.txt",STATUS="replace")
 
+! TODO: Revoir la lecture et le format d'entree des données
       READ(10,1000)  ((TL(I,J),J=1,30),P(I),I=1,60)        
       READ(10,1001) IPRINT,Nphasing,Nboucle,Ifasing,NCYCL  
       READ(10,1002) (Nphase(I),I=1,20)
@@ -122,14 +135,17 @@ SUBROUTINE Main()
       READ(10,1008) (NCfoo,(P(51+J+10*NC),J=1,3),Iref(NC),IQ1(NC,1),IQ2(NC,1),(P(51+J+10*NC),J=5,9),Idec(NC),NC=1,NCYCL)
 
 !     -----------------------------------------------------------
-      IF(IPRINT.EQ.1) THEN
+! TODO: Debug information
+!     IF(IPRINT.EQ.1) THEN
 !      OPEN(12,file="debug.txt",status="replace")
-      END IF
+!     END IF
+!
+
+
 
       ISPEED=0
-      PI=3.1415926536
-      PI2=0.01745329252
-      SQ6=SQRT(6.)
+
+
 !              DONNEES SPECTROMETRE
       NT=5*INT(P(2)+0.0001)
       powder1=FLOAT(Inorm1(NT/5))/10000000000.
@@ -187,10 +203,13 @@ SUBROUTINE Main()
       NALL=INT(P(40)+0.0001)
               
       CALL TRI(P,Idec)
+
 !     -------------------------------définition de tous les opérateurs----------------------------- 
       CALL OPERATOR
+
 !     --------------calcul des phases des pulses permettant la sélection d'un chemin de cohérence--
       CALL SELE(P,Level,Iref,Nphase,Ifasing,PHASEi,IDNfase,DNscan)
+
 !*************************BOUCLE SUR LE TEMPS T1 LORS D'UNE EXPERIENCE A 2 DIMENSIONS *************
       DO 995 IUY=10,10,1
       Pfit=0.5*FLOAT(IUY)
@@ -199,7 +218,8 @@ SUBROUTINE Main()
       T2s=P(14)*0.000002*PI
       T2i=P(44)*0.000002*PI
       
-      CALL PREPARATION(T2s,T2i,P,PI,PI2,RFstep)  
+      CALL PREPARATION(T2s,T2i,P,PI,PI2,RFstep)
+
 !****************BOUCLE POSSIBLE SUR LES ESPECES S, ICI UNE SEULE ESPECE***************************
       DO 700 KLM=1,1
       CALL ZERO()   
@@ -249,6 +269,7 @@ SUBROUTINE Main()
       A123ci=ABS(A1ci)+ABS(A2ci)+ABS(A3ci)
       IF(A123ci.GE.0.01) CALL ORIENTATION(A1ci,A2ci,A3ci,ETACi,1,FFCi,GGCi)
       NSB=INT(P(39))
+
 !-------------------BOUCLE SUR LE DIPOLAIRE NON MANIPULE--(K-S)--------------
       CALL DIPOLAR(3,IN,P,NISPs,COEFdip)
                DO 600 Ii1=-NISPs(1),NISPs(1),2                           
@@ -260,6 +281,7 @@ SUBROUTINE Main()
       DISOst=DISOs+(DJ(1)*FLOAT(Ii1)+DJ(2)*FLOAT(Ii2)+DJ(3)*FLOAT(Ii3))/2.
       A123T=A123cs*ABS(DELTACs)+A123ci*ABS(DELTACi)+A23Ds(1)*ABS(Ii1)+ &
             A23Ds(2)*ABS(Ii2)+A23Ds(3)*ABS(Ii3)+A23Ds(4)+A123qi*1000.*ABS(CQi)
+
 !-------------------BOUCLE SUR LES PHASES DES PULSES, SI IL Y A CYCLAGE DE PHASE
       DO 410 IIZ=0,40
       DO 410 JJZ=0,80
@@ -430,12 +452,8 @@ SUBROUTINE Main()
 
 
       close(5)
-!      close(12)
-!      close(20)
-!      close(22)
-!      STOP
-       END
-!
+
+END SUBROUTINE
 
 
 

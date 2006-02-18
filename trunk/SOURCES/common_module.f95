@@ -1,7 +1,11 @@
-!     Last change:  CF   15 Feb 2006   11:23 pm
+!     Last change:  CF   16 Feb 2006    8:42 am
 ! File: $Id: Module_common.f95,v 1.0
 ! ----------------------------------------------------------------------
 ! PULSAR Project
+!        Copyright (C) 2006 Jean-Paul Amoureux, Christian Fernandez
+!        JPA - Unité de Catalyse et Chimie du Solide, Lille, France.
+!        CF  - Laboratoire Catalyse et Spectrochimie, Caen, France.
+!
 ! ----------------------------------------------------------------------
 ! LICENSE
 !
@@ -101,7 +105,6 @@ module common_module
       REAL :: DELTACs
       REAL :: ETACs
       REAL :: A123cs
-      REAL :: A23Ds
       REAL :: COEFPi
       REAL :: COEFSi
       REAL :: ETAQi
@@ -113,7 +116,6 @@ module common_module
       REAL :: SPINs
       REAL :: SPINi
       REAL :: FST
-      REAL :: SQ6
       REAL :: QQ
       REAL :: DNORM
       REAL :: WROT

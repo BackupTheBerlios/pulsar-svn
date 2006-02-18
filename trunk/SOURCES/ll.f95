@@ -1,5 +1,5 @@
-!     Last change:  CF   15 Feb 2006    1:02 pm
-! File: $Id: ll.for, v 0.1
+!     Last change:  CF   16 Feb 2006    8:20 am
+! File: $Id: ll.f95, v 0.1
 ! ----------------------------------------------------------------------
 ! PULSAR Project
 !        Copyright (C) 2006 Jean-Paul Amoureux, Christian Fernandez
@@ -27,10 +27,6 @@
 ! ----------------------------------------------------------------------
 ! LAST MODIFICATIONS:
 !   20060215 CF - Creating this file 'll.for'
-!
-! TODO:
-!   . Writing a header in english
-!   . Transform in free form fortran syntax
 !-----------------------------------------------------------------------
 
 !***********************************************************************
@@ -150,6 +146,9 @@
       SUBROUTINE LL(XX,YY,ZZ,II,JJ,R3)
 !***********************************************************************     
       USE common_module
+
+      real, parameter :: sq6=2.4494897427831780981972840747059
+
       DIMENSION Ror(100,100),Roi(100,100),YR(100,100),YI(100,100)    &
      ,TR(100,100),TI(100,100),RoTR(100,100),RoTI(100,100),ZL(0:4)    &
      ,ZR(100,100),ZI(100,100),VP(100),VVi(2),VVs(2),VVIi(2),VVIs(2)  &
