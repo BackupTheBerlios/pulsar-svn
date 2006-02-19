@@ -1,4 +1,4 @@
-!     Last change:  CF   16 Feb 2006    8:20 am
+!     Last change:  CF   19 Feb 2006   10:55 am
 ! File: $Id: ll.f95, v 0.1
 ! ----------------------------------------------------------------------
 ! PULSAR Project
@@ -27,10 +27,11 @@
 ! ----------------------------------------------------------------------
 ! LAST MODIFICATIONS:
 !   20060215 CF - Creating this file 'll.for'
+!         19 CF - Modification parametres dans LLcp etc... (bien que ces functions ne soit pas encore utilisées)
 !-----------------------------------------------------------------------
 
 !***********************************************************************
-      SUBROUTINE LLcp(XX,YY,ZZ,II,JJ,R3)
+      SUBROUTINE LLcp(ZZ)
 !***********************************************************************
       USE common_module
       DIMENSION B(-2:2),BB(-2:2)
@@ -59,7 +60,7 @@
       END
 !       
 !***********************************************************************
-      SUBROUTINE LLredor(XX,YY,ZZ,II,JJ,R3)
+      SUBROUTINE LLredor(YY,ZZ,R3)
 !***********************************************************************
       USE common_module
 !                            INTRODUIRE LLredor dans EDGEA pour la moyenne de poudre
@@ -79,7 +80,7 @@
       END
 !              
 !***********************************************************************
-      SUBROUTINE LL3spinsRedor(XX,YY,ZZ,II,JJ,R3)
+      SUBROUTINE LL3spinsRedor(XX,YY,ZZ,R3)
 !***********************************************************************
       USE common_module
 !                             TRES IMPORTANT: UTILISER EDGEB POUR LA MOYENNE DE POUDRE
@@ -120,7 +121,7 @@
       END
 !       
 !***********************************************************************
-      SUBROUTINE LLtedor(XX,YY,ZZ,II,JJ,R3)
+      SUBROUTINE LLtedor(YY,ZZ,R3)
 !***********************************************************************
       USE common_module
       TPI=6.2831853072

@@ -1,4 +1,4 @@
-!     Last change:  CF   18 Feb 2006    7:46 pm
+!     Last change:  CF   19 Feb 2006   11:00 am
 ! File: $Id: pulsar.for, v 0.1
 ! ----------------------------------------------------------------------
 ! PULSAR Project
@@ -271,7 +271,7 @@ SUBROUTINE Main()
       NSB=INT(P(39))
 
 !-------------------BOUCLE SUR LE DIPOLAIRE NON MANIPULE--(K-S)--------------
-      CALL DIPOLAR(3,IN,P,NISPs,COEFdip)
+      CALL DIPOLAR(3,P,NISPs,COEFdip)
                DO 600 Ii1=-NISPs(1),NISPs(1),2                           
                WdipIs(1)=Wdip(1)*FLOAT(Ii1)/2.                           
                DO 600 Ii2=-NISPs(2),NISPs(2),2                           
@@ -358,11 +358,13 @@ SUBROUTINE Main()
 
   500 CONTINUE
 
+      FNEXP=FLOAT(NU)*DNscan  ! warning message from gfortran??? : 'fnexp' may be used uninitialized in this function
+                              ! Possibly a problem with loops
       IF(A123T.LT.0.1) THEN
-             FNEXP=FLOAT(NU)*DNscan*powder1/COEFdip             
+             FNEXP=FNEXP*powder1/COEFdip
              CALL SPECTREA()
       ELSE        
-             FNEXP=FLOAT(NU)*DNscan*powder2/COEFdip
+             FNEXP=FNEXP*powder2/COEFdip
              CALL SPECTREB()
       END IF     
 
@@ -446,7 +448,7 @@ SUBROUTINE Main()
  1007 FORMAT(10X,21(1X,I2))
  1008 FORMAT(I4,F9.0,F7.1,F8.3,3I3,F9.0,F7.1,2F8.3,F10.3,I2)
  5001 FORMAT(100(2X,F7.1,1X,F7.1))
- 5002 FORMAT (F16.8,F16.8,F16.8)
+ ! 5002 FORMAT(F16.8,F16.8,F16.8)  [not used]
 
       close(2)
 

@@ -1,4 +1,4 @@
-!     Last change:  CF   16 Feb 2006    8:49 am
+!     Last change:  CF   19 Feb 2006   11:00 am
 ! File: $Id: subroutines.f95, v 0.1
 ! ----------------------------------------------------------------------
 ! PULSAR Project
@@ -77,7 +77,7 @@ SUBROUTINE TRI(P,Idec)
 !
 
 !***********************************************************************
-      SUBROUTINE DIPOLAR(NATsmax,IN,P,NISPs,COEFdip)
+      SUBROUTINE DIPOLAR(NATsmax,P,NISPs,COEFdip)
 !***********************************************************************       
       USE common_module
       DIMENSION P(*),NISPs(*)
