@@ -1,0 +1,101 @@
+#------------------------------------------------------------------------------
+# DEMO2.PUL
+# version=1.0
+# Author: C. Fernandez
+#------------------------------------------------------------------------------
+# Purpose:
+#       a sample with several quadrupolar nucleus sites
+#------------------------------------------------------------------------------
+# Suggestion:
+#       try to keep the following order of the statements in your own script
+#------------------------------------------------------------------------------
+
+# start a new simulation
+#-----------------------
+sim1=Simulation()               # Open a new simulation instance with 
+                                # the default proton frequency set to 400Mhz
+                                # (but we can also pass another proton frequency 
+                                # it will be 600 MHz for the proton, if we write
+                                #   sim1=Simulation("600 MHz")'          
+
+# Nucleus definition 
+#-------------------- 
+sim1.set_channel("23Na")        # define the observed nucleus (required)
+
+# Site 1
+#-------
+Na1=Nucleus("23Na")             # To obtain correct value of the Larmor frequency
+                                # and of the 'ppm' definition
+                                # this statement must be set after 
+                                # the definition of the simulation:
+                                # e.g., sim1=Simulation()
+Na1.set_quadrupole(cq="0.1 mhz", eta=0.3)    
+                                # default cq=0,eta=0,alpha=0,beta=0,gamma=0
+Na1.set_chemicalshift(iso="100 ppm")          
+                                # default iso=0,csa=0,eta=0,alpha=0,beta=0,gamma=0 
+
+# Site 2
+#-------
+Na2=Nucleus("23Na") 
+Na2.set_quadrupole(cq="2.50 mhz", eta=0.3)    
+Na2.set_chemicalshift(iso="0 ppm")         
+
+# Site 3
+#-------
+V3=Nucleus("51V") 
+V3.set_quadrupole(cq="0.5 mhz", eta=0.)    
+V3.set_chemicalshift(iso="0 ppm")         
+
+# define the nuclei used in the simulation
+#---------------------------------------
+sim1.add_nucleus(Na1)           # add the nucleus defined as Na1 in the simulation
+sim1.add_nucleus(Na2)           # add the second nucleus defined as Na2 in the simulation
+                                # Now we have a list of two nuclei with index 0 and 1 respectively
+sim1.add_nucleus(V3)            # add the third nucleus defined as Na3 in the simulation
+                                # Now we have a list of three nuclei with index 0 to 2 
+                                
+# simulation setting
+#-------------------                
+## Optional statements (to overset the default values)
+sim1.set_spinningspeed("5 kHz") # default STATIC for non spinning sample
+sim1.set_spinningangle(MAS)     # default MAS
+sim1.set_qfactor(200)           # Probe quality factor (default 0.001)
+sim1.set_npts("16 K")            # default 4096 or 4*K
+sim1.set_sw("500 kHz")           # default 10000.
+sim1.set_accuracy(5)            # default 8       
+sim1.set_rfstep(5)              # default 5
+
+# Pulse sequence
+#---------------
+sim1.set_idealpulse()
+
+# Run simulations
+#----------------
+sim1.reset_spectra()            # reset the current spectrum buffer
+
+nb=sim1.get_numberofnuclei("23Na")  # this function help to extract the number of nuclei in a given list
+for index in range(nb):
+    ## required statement
+    sim1.set_nucleus("23Na",index)   
+                                # with the given Index in the simulation
+    sim1.set_nsb(AUTO)          # default 0 (AUTO means automatic calculation of nsb) 
+    sim1.set_detect(ALL)        # default ALL (other values: CENTRAL, SATELLITE)
+    sim1.execute_pulsar()       # start execution of this script
+    sim1.make_lb("200 Hz")      # make some broadenings
+    sim1.store_spectrum()       # storing the result in the spectrum buffer
+
+#sim1.set_nucleus("51V")   
+#sim1.set_nsb(AUTO)         
+#sim1.set_detect(ALL)        
+#sim1.run_simulation()       
+#sim1.make_lb("200 Hz")          #Must appear only once per nucleus in the script  
+#sim1.store_spectrum()
+
+# Make a sum of the spectra and add it to the buffer for display
+#---------------------------------------------------------------
+sim1.sum_spectra(1,1)            # create a new spectrum by adding all 
+                                # the spectrum in the buffer   
+                                # taking into account the concentration (1 by default)
+
+
+
