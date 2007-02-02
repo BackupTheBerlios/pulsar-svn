@@ -1,0 +1,57 @@
+# Simple.pul
+# PULSAR Project:
+#
+# version=1.0
+# Author: C. Fernandez
+#
+#------------------------------------------------------------------------------
+# License:
+#
+# Copyright (C) 2006-2007 Jean-Paul Amoureux, Christian Fernandez
+# JPA - Unite de Catalyse et Chimie du Solide, Lille, France.
+# CF  - Laboratoire Catalyse et Spectrochimie, Caen, France.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License (GPL)
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# To read the license please visit http://www.gnu.org/copyleft/gpl.html
+#------------------------------------------------------------------------------
+# Purpose:
+#   A very simple quadrupolar spectra simulation
+#------------------------------------------------------------------------------
+
+# start a new simulation
+#-----------------------
+sim1=Simulation(verbose=true)
+
+# Nucleus definition 
+#-------------------- 
+Na=Nucleus("23Na")   
+sim1.add_nucleus(Na)            
+Na.set_quadrupole(cq="2.5 mhz", eta=0.3)    
+Na.set_chemicalshift(iso="20 ppm")          
+
+# define the nuclei used in the simulation
+#---------------------------------------           
+sim1.set_channel("23Na")
+sim1.set_nucleus("23Na")        
+
+# simulation setting
+#-------------------                
+sim1.set_spinningspeed("10 kHz")
+sim1.set_nsb(AUTO)               
+
+# Pulse sequence
+#---------------
+sim1.set_idealpulse()
+
+# Run simulations
+#----------------
+sim1.execute_pulsar()           
+sim1.make_lb("100 Hz")        
+sim1.store_spectrum()          
