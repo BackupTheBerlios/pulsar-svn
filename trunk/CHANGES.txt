@@ -1,0 +1,9 @@
+2007.01.31
+----------
+Initial version
+Use MatplotLib and Scipy (Can be compiled using PyInstaller with some hacks - See the Built_pyPulsar_EXE.cmd)
+
+in 2006
+---------------
+To make this f2py working with LF95 5.6 on window, I had to modified the libc to libcmodified.lib (removing some conflicting objects using LM (library manager).
+

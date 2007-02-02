@@ -1,0 +1,18 @@
+PyPULSAR - Copyright: 2007
+*******************************
+
+Christian Fernandez
+Laboratoire de Catalyse et Spectrochime
+ENSICAEN
+Ecole Nationale Supérieure des Ingénieurs de CAEN
+et Université de Caen Basse-Normandie, 
+FRANCE
+
+and
+
+Jean Paul Amoureux
+Unité de Catalyse et Chimie du Solide
+Université des Sciences et Technologies de Lille, 
+FRANCE
+
+  
