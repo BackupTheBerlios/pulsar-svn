@@ -1,4 +1,4 @@
-!     Last change:  CF    3 Feb 2007   12:31 pm
+!     Last change:  CF    3 Feb 2007    5:36 pm
 !
 !$parameters.f95
 !
@@ -97,9 +97,6 @@ module parameters
   real*8, allocatable :: dipole(:,:)             !i, j, dipole, euler angles
   real*8, allocatable :: quadrupole(:,:)         !quadrupolar constant, eta and euler angle
   real*8, allocatable :: t2(:,:)                 !t2 homogeneous relaxation time
-  real*8, allocatable :: lb(:,:)                 !line broadening (lorentzian)
-  real*8, allocatable :: gb(:,:)                 !line broadening (gaussian)
-  real*8, allocatable :: concentration(:,:)      !concentration
 
                                                  !simulation_parameters
                                                  !---------------------
