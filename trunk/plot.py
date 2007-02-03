@@ -44,6 +44,9 @@ from scipy.fftpack import *
 
 from debug import *
 
+false=No=no=FALSE=False
+true=Yes=yes=TRUE=True
+
 #============================================================================
 class PlotFigure(wx.Window):
 #============================================================================
@@ -74,6 +77,7 @@ class PlotFigure(wx.Window):
         self.vl1=0
         self.sw=0
         self.sw1=0
+        self.flag_sum=False
         
         try:          
             [dirname,shortfilename]=os.path.split(filename)
@@ -105,90 +109,124 @@ class PlotFigure(wx.Window):
             f=open(self.filename,"rb")
         else:
             return False
-        #first the header
-        line=f.readline()    # PULSAR string
-        DEBUG_MSG(rtn(line))
-        line=f.readline()    # NP string
-        DEBUG_MSG(rtn(line))
-        items=line.split('=')
-        n=int(items[1])     
-        line=f.readline()    # SW string
-        DEBUG_MSG(rtn(line))
-        items=line.split('=')
-        sw=float(items[1])
-        line=f.readline()    # VL
-        DEBUG_MSG(rtn(line))
-        items=line.split('=')
-        vl=float(items[1])
-        line=f.readline()    # NI or LB string?
-        DEBUG_MSG(rtn(line))
-        items=line.split('=')
-        ni=1 #by default
-        if string.strip(items[0])=="NI":     
-            ni=int(items[1])
-            line=f.readline()    #SW1
+        try: # Handling opening erros
+            #first the header
+            line=f.readline()    # PULSAR string
+            DEBUG_MSG(rtn(line))
+            line=f.readline()    # NP string
             DEBUG_MSG(rtn(line))
             items=line.split('=')
-            sw1=float(items[1])
-            line=f.readline()    #VL1
+            n=int(items[1])     
+            line=f.readline()    # SW string
             DEBUG_MSG(rtn(line))
             items=line.split('=')
-            vl1=float(items[1])
-            line=f.readline()    # LB string
+            sw=float(items[1])
+            line=f.readline()    # VL
             DEBUG_MSG(rtn(line))
-            items=line.split('=')     
-        #now we have to read LB and GB
-        self.lb=[]
-        self.gb=[]
-        self.lb.append(float(items[1]))
-        line=f.readline() #GB
-        DEBUG_MSG(rtn(line))
-        items=line.split('=')
-        self.gb.append(float(items[1]))
-        if ni>1:
-            for j in range(ni-1):
-                line=f.readline() #LB
+            items=line.split('=')
+            vl=float(items[1])
+            line=f.readline()    # NI or LB string?
+            DEBUG_MSG(rtn(line))
+            items=line.split('=')
+            ni=1 #by default
+            if string.strip(items[0])=="NI":     
+                ni=int(items[1])
+                line=f.readline()    #SW1
                 DEBUG_MSG(rtn(line))
                 items=line.split('=')
-                self.lb.append(float(items[1]))
-                line=f.readline() #GB
+                sw1=float(items[1])
+                line=f.readline()    #VL1
                 DEBUG_MSG(rtn(line))
                 items=line.split('=')
-                self.gb.append(float(items[1]))            
-        self.ydata = []
-        self.spec = []
-        # DATA to start reading
-        line=f.readline()  #TYPE
-        DEBUG_MSG(rtn(line))
-        line=f.readline()  #YDATA or XDATA
-        DEBUG_MSG(rtn(line))
-        if string.find(line,"YDATA")>-1:
-            DEBUG_MSG(rtn(line))
-            self.label=string.join(string.split(line)[1:],' ')
-            for j in range(ni):
-                line=f.readline()
-                self.ydata.append(float(line))
+                vl1=float(items[1])
+                line=f.readline()    #SUM
+                DEBUG_MSG(rtn(line))
+                items=line.split('=')
+                flag_sum=eval(string.upper(items[1]))
+                line=f.readline()    # LB string
+                DEBUG_MSG(rtn(line))
+                items=line.split('=')     
+            #now we have to read LB
+            self.lb=[]
+            self.lb.append(float(items[1]))
+            #and GB
             line=f.readline()
             DEBUG_MSG(rtn(line))
-        for j in range(ni):
-            DEBUG_MSG("\treading spectrum"+str(j+1))
-            xy = []
-            DEBUG_MSG("n %13i"%n)
-            for i in range(n):
+            items=line.split('=')
+            self.gb=[]
+            self.gb.append(float(items[1]))
+            #and CONCENTRATION
+            line=f.readline() 
+            DEBUG_MSG(rtn(line))
+            items=line.split('=')
+            self.concentration=[]
+            self.concentration.append(float(items[1]))
+            if ni>1:
+                for j in range(ni-1):
+                    line=f.readline() #LB
+                    DEBUG_MSG(rtn(line))
+                    items=line.split('=')
+                    self.lb.append(float(items[1]))
+                    line=f.readline() #GB
+                    DEBUG_MSG(rtn(line))
+                    items=line.split('=')
+                    self.gb.append(float(items[1]))
+                    line=f.readline() #concentration
+                    DEBUG_MSG(rtn(line))
+                    items=line.split('=')
+                    self.concentration.append(float(items[1])) 
+
+            self.ydata = []
+            self.spec = []
+            
+            # read TYPE 
+            line=f.readline()
+            DEBUG_MSG(rtn(line))
+
+            # read YDATA or XDATA
+            line=f.readline()  
+            DEBUG_MSG(rtn(line))
+
+        except: # There was an error
+            WRITE_STRING("***ERROR***: Badly formatted header")
+            f.close()
+            return false
+
+        if string.find(line,"YDATA")>-1: # check if is a YDATA directive
+            try:     
+                self.label=string.join(string.split(line)[1:],' ')
+                for j in range(ni):
+                    line=f.readline()
+                    self.ydata.append(float(line))
                 line=f.readline()
-                items=line.split(' ')
-                x=float(items[0])
-                y=float(items[1])
-                xy.append(complex(x,y))
-            DEBUG_MSG("end reading "+str(j+1))
-            self.spec.append(array(xy))
-                                             
-        line=f.readline()       
-        DEBUG_MSG(rtn(line))
-        if string.find(line,"END")>-1:
-                DEBUG_MSG("reading file success!")
-        f.close()
-        
+                DEBUG_MSG(rtn(line))
+            except:
+                WRITE_STRING("***ERROR***: bad YDATA labels")
+                f.close()
+                return false
+        try:
+            for j in range(ni):
+                DEBUG_MSG("\treading spectrum"+str(j+1))
+                xy = []
+                DEBUG_MSG("n %13i"%n)
+                for i in range(n):
+                    line=f.readline()
+                    items=line.split(' ')
+                    x=float(items[0])
+                    y=float(items[1])
+                    xy.append(complex(x,y)*self.concentration[j])
+                DEBUG_MSG("end reading "+str(j+1))
+                self.spec.append(array(xy))
+
+            line=f.readline()       
+            DEBUG_MSG(rtn(line))
+            if string.find(line,"END")>-1:
+                    DEBUG_MSG("reading file success!")
+        except:
+            WRITE_STRING("***ERROR***: problem when reading X,Y data in the *.spe file!")
+            f.close()
+            return false
+            
         self.frequency, self.ppm = [], []
         for i in range(n):
             self.frequency.append((i+1)*sw/n-sw/2.)
@@ -202,9 +240,21 @@ class PlotFigure(wx.Window):
         if ni > 1:
             self.vl1=vl1
             self.sw1=sw1
+            self.flag_sum=flag_sum
+            
+        #perform the fft and broadening
+        addlb(ni, self.spec, self.sw, self.lb, self.gb, self.concentration)
 
-        #perform the first fft
-        addlb(ni, self.spec, self.sw, self.lb, self.gb) 
+        #sum of the spectra
+        if self.flag_sum:
+            p=[]
+            for i in range (n):
+                sum=complex(0.,0.)
+                for j in range(ni):
+                    sum=sum+self.spec[j][i]
+                p.append(sum)      
+            self.spec.append(array(p))
+            self.ni=ni+1    
         return True
     
     #------------------------------------------------    
@@ -426,7 +476,7 @@ def rtn(st):
     return st
 
 #---------------------------------------------------------------------------------    
-def addlb(ni, spec ,sw ,lb=0 ,gb=0):
+def addlb(ni, spec ,sw ,lb=0 ,gb=0, concentration=0):
 #---------------------------------------------------------------------------------    
     """ Make line broadenings """
 

@@ -37,7 +37,8 @@ sim1.set_channel("23Na")
 #-------------------- 
 Na=Nucleus("23Na")   
 Na.set_quadrupole(cq="1.5 mhz", eta=0.3)    
-Na.set_chemicalshift(iso="1 ppm")          
+Na.set_chemicalshift(iso="1 ppm") 
+Na.set_lb("200 Hz")          
 sim1.add_nucleus(Na)        
 
 # simulation setting
@@ -51,8 +52,7 @@ sim1.set_idealpulse()
 
 # Run simulations
 #----------------
-sim1.select_nucleus("23Na")
+sim1.select_nucleus()
 sim1.set_nsb(AUTO) 
-sim1.execute_pulsar()           
-sim1.make_lb("100 Hz")        
+sim1.execute_pulsar()                  
 sim1.store_spectrum()   

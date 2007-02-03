@@ -1,4 +1,4 @@
-# Simple.pul
+# TwoNuclei.pul
 # PULSAR Project:
 #
 # version=1.0
@@ -22,7 +22,7 @@
 # To read the license please visit http://www.gnu.org/copyleft/gpl.html
 #------------------------------------------------------------------------------
 # Purpose:
-#   A very simple quadrupolar spectra simulation
+#   A sum of several spectra
 #------------------------------------------------------------------------------
 
 # start a new simulation
@@ -37,12 +37,16 @@ sim1.set_channel("23Na")
 #-------------------- 
 Na=Nucleus("23Na")   
 Na.set_quadrupole(cq="1.5 mhz", eta=0.3)    
-Na.set_chemicalshift(iso="-2 ppm")          
+Na.set_chemicalshift(iso="2 ppm") 
+Na.set_lb("10 Hz") 
+Na.set_concentration(.5)          
 sim1.add_nucleus(Na)        
 
 Na2=Nucleus("23Na")   
 Na2.set_quadrupole(cq="0.5 mhz", eta=0.1)    
-Na2.set_chemicalshift(iso="0 ppm")         
+Na2.set_chemicalshift(iso="-10 ppm") 
+Na2.set_lb("300 Hz") 
+Na2.set_concentration(1)       
 sim1.add_nucleus(Na2) 
 
 # simulation setting
@@ -58,14 +62,10 @@ sim1.set_idealpulse()
 #----------------
 sim1.reset_spectra()            # reset the current spectrum buffer
 for index in range (2):
-    WRITE_STRING("\n\n simulation index :")
-    WRITE_STRING(str(index))
+    write_string("\n\n simulation index :"+str(index))
     sim1.reset_nucleus()
-    sim1.select_nucleus("23Na",index)
+    sim1.select_nucleus(index)
     sim1.set_nsb(AUTO) 
     sim1.execute_pulsar()  
-    sim1.make_lb(index*100)                 
-    sim1.store_spectrum(index)   
-sim1.make_lb("100 Hz")
-conc=[1.,.5]
-sim1.sum_spectra(conc)       
+    sim1.store_spectrum()   
+sim1.sum_spectra()              # Sum spectra 

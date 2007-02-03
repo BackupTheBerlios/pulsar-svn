@@ -95,6 +95,7 @@ class Simulation:
         """
         set default parameters for the simulation
         """
+        DEBUG_MSG("Simulation INIT")
         #it is mandatory to reset f95pulsar when doing a new simulation
         #that means zero some arrays that can have different size in
         #different simulation
@@ -110,7 +111,7 @@ class Simulation:
         self.reset_pulsar()
         self.reset_nucleus()
         self.reset_spectra()
-
+            
         # initialise some basic parameters for the simulation
         self.set_frequency(protonfrequency)            
         self.spinningspeed=0.
@@ -123,6 +124,7 @@ class Simulation:
         self.aliasing=no
         self.nsb=0
         self.nall=0
+        self.flag_sum=False
         
         # load all new parameters in Pulsar
         # the most important here is the protonfrequency
@@ -131,15 +133,10 @@ class Simulation:
         # initialise a "void" sample
         #   zero nuclei inside
         self.sample=Sample()
-        self.concentrations=[1.0]
 
         # initialise a "void" pulse sequence
         self.sequence=PulseSequence()
-
-        #inititialise the array of broadening parameters
-        self.lb=[] 
-        self.gb=[]
-                
+               
     #----------------------
     def reset_pulsar(self):
     #----------------------
@@ -148,7 +145,7 @@ class Simulation:
         """
         DEBUG_MSG("RESET PULSAR")
         reset()      #CALL TO A F95PULSAR reset function
-
+        
     #-----------------------
     def reset_spectra(self):
     #-----------------------
@@ -157,7 +154,10 @@ class Simulation:
         """
         DEBUG_MSG("RESET SPECTRA")
         self.collection_spectra = []
-
+        self.list_lb=[]
+        self.list_gb=[]
+        self.list_concentration=[]
+        
     #-----------------------
     def reset_pulse(self):
     #-----------------------
@@ -170,7 +170,7 @@ class Simulation:
         parameters.coher = []               
 
     #-------------------------------------------------------
-    def execute_pulsar(self,pulsarverbose=False):
+    def execute_pulsar(self,TEST=False):
     #-------------------------------------------------------
         """
         Run the simulation using the f95Pulsar module
@@ -198,7 +198,7 @@ class Simulation:
         self.display()
         
         #execute the simulation
-        compute(pydebug_msg,pywrite_string)
+        if not TEST : compute(pydebug_msg,pywrite_string)
            
     #-----------------
     def display(self):
@@ -406,8 +406,8 @@ class Simulation:
         self.qfactor = max(evaluate(qfactor),0.0001)
 
     #-----------------------------
-    def store_spectrum(self,data=None,label=None):
-    #---------------------------------------------
+    def store_spectrum(self,data="undefined",label=""):
+    #--------------------------------------------------
         """
         add a spectrum to the collection of spectra  
         """
@@ -415,60 +415,30 @@ class Simulation:
         spec = array(parameters.spec)
         s = self.collection_spectra
         self.collection_spectra.append(spec)
-        if data:
+        if data != "undefined":
             self.collection_data.append(data)      #identifier
             DEBUG_MSG("Stored : "+str(data))
-        if label:
+        if label !="":
             self.collection_label=label
             DEBUG_MSG("Stored : "+label)
+        else:
+            self.collection_label="variable index"            
         self.current_spectrum = array(spec)
+        self.list_lb.append(self.lb)
+        self.list_gb.append(self.gb)
+        self.list_concentration.append(self.concentration)
+        
         WRITE_STRING("\nA spectrum has been added to collection spectra ("+str(len(self.collection_spectra))+")") 
-         
+
     #------------------------------------------
-    def sum_spectra(self, *concentration, *lb):
+    def sum_spectra(self, do_sum=True):
     #------------------------------------------
         """
-        sum the spectra in the collection spectra  
+        set a flag for future summation of spectra  
         """
-        DEBUG_MSG("SUM_SPECTRA")
-        try: 
-            concentration=list(concentration)
-
-            # handle somes cases where list or tuples arguments were passed
-            if (type(concentration[0]) is types.TupleType):
-                concentration=list(concentration[0])
-            elif (type(concentration[0]) is types.ListType):
-                concentration=concentration[0]
-                        
-            l=len(concentration)
-            if l<len(self.collection_spectra):
-                WRITE_STRING("\nWarning: the list of concentrations too short... assumed to be 1 for the missing argument")
-                for i in range(len(self.collection_spectra)-l):
-                    concentration.append(1.0)
-
-            self.concentrations=concentration
-            if (verbose) : WRITE_STRING("\tConcentrations: "+str(self.concentrations)+"\n")
-                                     
-            if len(self.collection_spectra)>1:
-                if l>1:
-                    self.collection=[]
-                    for id in range(len(self.collection_spectra)):
-                        spectra=self.collection_spectra[id]
-                        spectraconc=spectra*concentration[id]
-                        self.collection.append(spectraconc)
-                    spec = array(sum(self.collection))
-                else:
-                    spec = array(sum(self.collection_spectra))
-                self.concentrations.append(1.0)  # add the concentration=1 for the sum spectra (needed for display)
-                self.collection_spectra.append(spec)
-                self.current_spectrum = spec
-            else:
-                if len(self.collection_spectra)==0:  WRITE_STRING("\n\tWARNING: sum_spectrum - zero spectrum in the collection\n")
-            if (verbose) : WRITE_STRING("All spectrum in the current collection have been summed")
-            if (verbose) : WRITE_STRING("The corresponding spectrum has been added to collection spectra ("+str(len(self.collection_spectra))+")")  
-        except:
-            WRITE_STRING("\nERROR: in the sum_spectra function \n\tsee the website to know how to report this error to the developpers")
-            
+        DEBUG_MSG("SUM_SPECTRA "+str(do_sum))
+        self.flag_sum=do_sum
+                    
     #-------------------------------------------
     def write_spectra(self,filename = "pulsar"):
     #-------------------------------------------
@@ -494,17 +464,15 @@ class Simulation:
             lines.append("NI="+string.strip(str(np1))+'\n')
             lines.append("SW1="+string.strip(str(sw1))+'\n')
             lines.append("VL1="+string.strip(str(vl1))+'\n')
+            lines.append("SUM="+string.strip(str(self.flag_sum))+'\n')
         for id in range(np1):
-            if self.lb and len(self.lb)>id:
-                lines.append("LB="+string.strip(str(self.lb[id]))+"\n")
-            else:
-                lines.append("LB=0.0\n")    
-            if self.gb and len(self.gb)>id:
-                lines.append("GB="+string.strip(str(self.gb[id]))+"\n")
-            else:
-                lines.append("GB=0.0\n")    
+            lines.append("LB="+string.strip(str(self.list_lb[id]))+"\n")
+            lines.append("GB="+string.strip(str(self.list_gb[id]))+"\n")
+            lines.append("CONCENTRATION="+string.strip(str(self.list_concentration[id]))+"\n")
+            
         lines.append("TYPE=SPE"+'\n')
         if len(self.collection_data)==np1:
+            print self.collection_label
             lines.append("YDATA "+self.collection_label+'\n')
             for id in range(np1):
                 line = string.strip(repr(self.collection_data[id]))+'\n'
@@ -512,11 +480,8 @@ class Simulation:
         lines.append("XDATA"+'\n')
         for id in range(np1):
             spec=[]
-            try:
-                spec=self.collection_spectra[id]*self.concentrations[id]
-            except:
-                spec=self.collection_spectra[id]
-
+            spec=self.collection_spectra[id]
+            
             #case of an aliasing
             if self.aliasing:
                 i=0
@@ -553,20 +518,6 @@ class Simulation:
         if (verbose) :
             WRITE_STRING("\nSaving of spectra data done.")
 
-    #----------------------------------------
-    def make_lb(self,lb = 0.001, gb = 0.000):
-    #----------------------------------------
-        """
-        make line broadening of the current spectrum  
-        """
-        DEBUG_MSG("MAKE_LB")
-        #TODO: make a test to avoid multiple entry for the same nucleus
-        self.lb.append(abs(evaluate(lb)))
-        self.gb.append(abs(evaluate(gb)))
-        if (verbose) :
-            WRITE_STRING("\nBroadening applied to the current spectrum lb = "+ str(self.lb)+" Hz gb  =  "+ str(self.gb)+" Hz")         
-
-
     #-----------------------    
     def reset_nucleus(self):
     #-----------------------
@@ -585,6 +536,7 @@ class Simulation:
         DEBUG_MSG("ADD NUCLEUS")
         if not nucleus:
             WRITE_STRING("\nError in add_nucleus - check the argument of the function")
+        # we add this nucleus to the sample
         self.sample.add_nucleus(nucleus)
         
     #-----------------------------
@@ -607,33 +559,56 @@ class Simulation:
     def select_nucleus(self,nucleus=None,index=None):
     #-----------------------------------------------------
         """
-        define the nucleus used in the simulation
+        define the nucleus used for the calculation (use only its index)
+        arg:
+            nucleus: String
+            index: integer - index start at 0
         """
-        DEBUG_MSG("SET_NUCLEUS: "+nucleus)
+        DEBUG_MSG("SELECT_NUCLEUS")
         
-        if nucleus is None:
+        if (nucleus is None) and (index is None):
             # we assumed that the observing channel in this case
-            # corresponds to the observed nucleus
-            nucleus=self.channel
-
-        if index is not None :
-            WRITE_STRING("\n\n#Selected nucleus index : "+str(index+1))
+            # corresponds to the first set nucleus on the observed nucleus
+            nucleus=self.S_channel
+            index=0
+            
+        elif type(nucleus)is not types.StringType:
+            # The nucleaus name was not given - probably only the index
+            index=nucleus
+            nucleus=self.S_channel
+            
+        elif type(index) is types.IntType :
+            if (nucleus is None):
+                nucleus=self.S_channel
+                
         else:
+            nucleus=self.S_channel
             index=0
 
-        #in the case where the nucleus is not the same as the observed channel, we have to correct
-        #the chemical shift to take into account the frequency difference
+        WRITE_STRING("\n\n*Nucleus '"+ nucleus +"' with index : "+str(index)+" has been selected\n" +
+                         "*********************************************************************")
 
-        try:    
-            delta = isotopes[nucleus]["larmor"] - isotopes[self.S_channel]["larmor"]
-            delta=delta*mhz
-            abundance=isotopes[nucleus]["abundance"]
+        try:
+            if type(nucleus) is types.StringType:
+                #in the case where the nucleus is not the same as the observed channel, we have to correct
+                #the chemical shift to take into account the frequency difference
+                delta = isotopes[nucleus]["larmor"] - isotopes[self.S_channel]["larmor"]
+                delta=delta*mhz   
+                abundance=isotopes[nucleus]["abundance"]
+                
+            #Validation
             self.sample.validate(nucleus,index,delta, abundance)
+
+            #Read the lb, gb and concentration from the current nucleus
+            self.lb=self.sample.nuclei[nucleus][index].lb
+            self.gb=self.sample.nuclei[nucleus][index].gb
+            self.concentration=self.sample.nuclei[nucleus][index].concentration
+        
         except KeyError:
             WRITE_STRING("\n\n*** ERROR *** '"+nucleus+ \
                   "' was not found in the nucleus list - Check the name and/or the mass number")
         except:
-            WRITE_STRING("\nError in set_nucleus")
+            WRITE_STRING("\nError in select_nucleus")
             
     #-------------------------------------------------------------
     def get_numberofnuclei(self,nucleus):
@@ -720,18 +695,18 @@ class Sample:
         if not self.nuclei.has_key(key):
             self.nuclei[key] = []  
         self.nuclei[key].append(newnucleus)
-
+        DEBUG_MSG(" -- add_nucleus "+key)
+        
     #---------------------------------------------------    
     def validate(self,key,index=0,delta=0, abundance=1):
     #---------------------------------------------------    
         """ validation of one nucleus """
-        DEBUG_MSG("Sample VALIDATE")
         if not self.nuclei: return 
         if not self.nuclei.has_key(key): return
         #extract the nuclei with the key and the index indicated 
         nucleus=self.nuclei[key][index]                  
         nucleus.validate(delta, abundance)
-
+        
     #----------------------    
     def validate_all(self):
     #----------------------    
@@ -762,6 +737,7 @@ class Nucleus:
         self.isotope = isotope
         self.nucleus=None
         try:
+
             self.nucleus = isotopes[isotope]      
             self.spin = self.nucleus["spin"]
             self.larmor = abs(self.nucleus["larmor"]) 
@@ -770,16 +746,20 @@ class Nucleus:
             self.abundance = self.nucleus["abundance"]
             self.relative = self.nucleus["relative"]
             self.absolute = self.nucleus["absolute"]
+            
             self.set_chemicalshift()
             self.set_quadrupole()
             self.set_relaxation()
+            self.lb=0.01
+            self.gb=0.
+            self.concentration=1.
+            
         except KeyError:
             WRITE_STRING("*** ERROR *** '"+isotope+ \
                   "' was not found in the nucleus list - Check the name and/or the mass number")
         except:
-            WRITE_STRING("*** ERROR *** Error in set_nucleus")
+            WRITE_STRING("*** ERROR *** Error in nucleus INIT")
       
-    
     #-----------------------------------    
     def validate(self,delta, abundance):
     #-----------------------------------     
@@ -858,7 +838,6 @@ class Nucleus:
                 i = i+1
             ar[self.index-1] = [self.index,self.cq,self.etaq,self.alphaq,self.betaq,self.gammaq]       
         parameters.quadrupole = ar                                          #allocate or reallocate and initialize       
-
         # T2
         if parameters.t2 == None:
             # if the 'parameters.t2' array doen't exist, create it with one line 
@@ -875,9 +854,9 @@ class Nucleus:
             # replace the line of the given index with the new one 
             ar[self.index-1] = [self.index,self.t2]                 # the numbering start at zero (this is why I use index-1)   
         parameters.t2 = ar                                          #allocate or reallocate and initialize        
-
+              
         if verbose:
-             #Display the current parameters
+            #Display the current parameters
             #-------------------------------
             WRITE_STRING("\nNUCLEUS: "+self.name)
             WRITE_STRING(  "------------")
@@ -906,20 +885,20 @@ class Nucleus:
                 if parameters.quadrupole[i,1]!=0 :
                     WRITE_STRING("\teuler Quadrupole [alpha,beta,gamma]: ["+ str(parameters.quadrupole[i,3])+ \
                                  ","+str(parameters.quadrupole[i,4])+","+str(parameters.quadrupole[i,5])+"]")     
-                WRITE_STRING("\tT2 relaxation: "+str(parameters.t2[i,1]/sec)+" sec") 
-                #WRITE_STRING("\tConcentration: "+str(self.concentration))
-
-
-           
-    # ---------------------------------------------------------------------
+                WRITE_STRING("\tT2 relaxation: "+str(parameters.t2[i,1]/sec)+" sec")
+                WRITE_STRING("\tLB: "+str(self.lb)+" Hz")
+                WRITE_STRING("\tGB: "+str(self.gb)+" Hz")
+                WRITE_STRING("\tconcentration: "+str(self.concentration))
+          
+    # --------------------------------------------------------------------------------
     def set_chemicalshift(self, iso=0, csa = 0, eta = 0,alpha = 0,beta = 0,gamma = 0):
-    #----------------------------------------------------------------------
+    #---------------------------------------------------------------------------------
         """
         Set the chemical shift of a given nucleus
         args:
             index - index of the nucleus (defined previously by set_nucleus)
-            iso - isotropic chemical shift in ppm
-            csa - chemical shift anisotropy in ppm
+            iso - isotropic chemical shift
+            csa - chemical shift anisotropy
             eta - assymetry of the csa
             alpha, beta, gamma - euler angles describing the orientation 
                                  with respect to the molecular frame
@@ -973,6 +952,37 @@ class Nucleus:
             self.betaq = 0.0
             self.gammaq = 0.0
 
+    # set_lb-------------------
+    def set_lb(self,lb = 0.01):
+    #--------------------------
+        """
+        Set the LB of a given nucleus
+        args:
+           lb - broadening (lorenzian)
+        """
+        DEBUG_MSG("Nucleus SET LB")
+        self.lb = evaluate(lb)
+
+    # set_gb------------------
+    def set_gb(self,gb = 0.0):
+    #-------------------------
+        """
+        Set the GB of a given nucleus
+        args:
+           gb - broadening (gaussian)
+        """
+        DEBUG_MSG("Nucleus SET GB")
+        self.gb = evaluate(gb)
+
+    # set_concentration-------
+    def set_concentration(self,concentration = 1.0):
+    #-------------------------
+        """
+        Set the CONCENTRATION of a given nucleus
+        """
+        DEBUG_MSG("Nucleus SET CONCENTRATION")
+        self.concentration = evaluate(concentration)
+        
 #==============================================================================    
 class PulseSequence:
 #==============================================================================    
@@ -1441,11 +1451,14 @@ def evaluate(st,isppm=False):
         except SyntaxError:
             WRITE_STRING("*** ERROR *** Syntax error in '"+st+"'")   
         if len(m) > 1:
-            if isppm :             
-                if string.strip(m[1]) != "ppm":
+            if isppm :
+##                print st
+##                print m
+##                print string.strip(m[1])
+                if string.strip(m[1]) != "PPM":
                     WRITE_STRING("ERROR of unit - 'ppm' required")     
             else:
-                if string.strip(m[1]) != "ppm":
+                if string.strip(m[1]) != "PPM":
                     try:
                         res=res*eval(m[1])
                     except NameError:

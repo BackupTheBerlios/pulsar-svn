@@ -32,6 +32,8 @@ import sys
 import document as document
 import process
 
+DEBUG=False
+
 class Buffer:
     """Buffer class."""
 
@@ -91,8 +93,8 @@ class Buffer:
         if self.editor:
             text = self.doc.read()
             self.editor._setBuffer(buffer=self, text=text)
-        print "buffer.py filename: ",
-        print filename
+        if DEBUG: print "buffer.py filename: ",
+        if DEBUG: print filename
         
     def overwriteConfirm(filepath):
         """Confirm overwriting an existing file."""

@@ -23,7 +23,7 @@ PURPOSE OF THIS FILE:
 
  Class for the Pulsar Script Editor
 
-TODO: Make some cleaning of this file (that was mostly adapted from PyCrust)
+TODO: Make a lot of cleaning of this file (that was mostly adapted from PyCrust)
 
 """
 __author__ = "C. Fernandez <christian.fernandez@ensicaen.fr>"
@@ -236,7 +236,7 @@ class EditorFrame(frame.Frame):
 
     def bufferOpen(self):
         """Open file in buffer."""
-        print "editor frame buffer open" 
+        if DEBUG: print "editor frame buffer open" 
         if self.bufferHasChanged():
             cancel = self.bufferSuggestSave()
             if cancel:
@@ -352,7 +352,7 @@ class EditorNotebookFrame(EditorFrame):
         """Destroy the current buffer."""
          
         selection = self.notebook.GetSelection()
-##         print "Destroy Selection:", selection
+        if DEBUG: print "Destroy Selection:", selection
         if selection > 0:  # Don't destroy the PyCrust tab.
             if self.buffer:
                 del self.buffers[self.buffer.id]
@@ -518,7 +518,7 @@ class PulsarNotebookFrame(EditorNotebookFrame):
             self.notebook = None
         else:
             selection = self.notebook.GetSelection()
-##             print "Destroy Selection:", selection
+            if DEBUG: print "Destroy Selection:", selection
             self.notebook.DeletePage(selection)
 
     def bufferNew(self):
@@ -685,8 +685,13 @@ class ViewLog:
         """Create Editor instance."""
         if DEBUG : print self.__class__
 
-        self.window = wx.TextCtrl(parent, id, '',style=wx.TE_MULTILINE)
+        self.window = wx.TextCtrl(parent, id, '',style=wx.TE_MULTILINE|wx.TE_RICH)
         self.window.SetInsertionPoint(0)
+        points = self.window.GetFont().GetPointSize()
+        f = wx.Font(points, wx.MODERN, wx.NORMAL, wx.NORMAL)
+        self.window.SetDefaultStyle(wx.TextAttr("BLACK", wx.NullColour, f))
+        # self.window.SetStyle(1, 1000, wx.TextAttr("BLUE", wx.NullColour, f))
+
         wx.EVT_CHAR(self.window, self.EvtChar)
         wx.EVT_WINDOW_DESTROY(self.window, self.OnWindowDestroy)
 
@@ -697,23 +702,17 @@ class ViewLog:
     #------------------
     def setFocus(self):
         """Set the input focus to the editor window."""
-#        self.window.SetFocus()
-         
-#        wx.LogMessage('focus')
 
     def OnKillFocus(self, evt):
-#        wx.LogMessage("OnKillFocus")
         
        evt.Skip()
 
     def OnWindowDestroy(self, evt):
-#        wx.LogMessage("OnWindowDestroy")
-# TODO: MAy be a saving of the log file would be great.
+# TODO: May be a saving of the log file would be great.
          
         evt.Skip()
 
     def EvtChar(self, event):
-#        wx.LogMessage('EvtChar: %d' % event.GetKeyCode())
          
         event.Skip()
 
@@ -918,8 +917,8 @@ def fileDialog(parent=None, title='Open', directory=PULSARPATH, filename='',
                wildcard='All Files (*.*)|*.*',
                style=wx.OPEN | wx.MULTIPLE):
     """File dialog wrapper function."""
-    print "directory: "
-    print directory
+    if DEBUG: print "directory: "
+    if DEBUG: print directory
     dialog = wx.FileDialog(parent, title, directory, filename,
                            wildcard, style)
     result = DialogResults(dialog.ShowModal())
@@ -928,8 +927,8 @@ def fileDialog(parent=None, title='Open', directory=PULSARPATH, filename='',
     else:
         result.paths = []
     dialog.Destroy()
-    print "file dialog "
-    print  result
+    if DEBUG: print "file dialog "
+    if DEBUG: print  result
     return result
 
 
@@ -945,8 +944,8 @@ def openSingle(parent=None, title='Open', directory=PULSARPATH, filename='',
     else:
         result.path = None
     dialog.Destroy()
-    print "open single  "
-    print result
+    if DEBUG: print "open single  "
+    if DEBUG: print result
     return result
 
 #----------------------------------------------------------------------------

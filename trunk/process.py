@@ -46,7 +46,7 @@ def runScript(name):
 
     # Read file
     #-----------
-    WRITE_STRING(' Reading script "'+scriptname+'"\n')              
+    DEBUG_MSG(' Reading script "'+scriptname+'"\n')              
     try:
         f=open(name,"r")
         text = f.read()
@@ -71,7 +71,7 @@ def runScript(name):
 
     header  = '_script="' + string.join(dirname.split('\\'),'/') + '/' + scriptname + '"'+ '\n'
     # to avoid a bug with filename all \ are replaced with /.
-    header += "WRITE_STRING('PULSAR_START_OF_PROCESS')\n"
+    header += "WRITE_STRING('SCRIPT PROCESS: Started...')\n"
 
     # Add the header to the script
     #-----------------------------
@@ -80,7 +80,7 @@ def runScript(name):
     # Perform after run commands
     #---------------------------
     text += "\nsim1.write_spectra(_script)\n"
-    text += "WRITE_STRING('PULSAR_END_OF_PROCESS')\n"
+    text += "WRITE_STRING('SCRIPT PROCESS: End')\n"
     text = text.replace('\r', '\n')
     text = text.replace('\n\n', '\n')    
 
@@ -97,7 +97,7 @@ def runScript(name):
 
     f.close()
 
-    max = 500   #TODO: try to find a correct estimate of the running time from the parameters readed in the script
+    max = 2000   #TODO: try to find a correct estimate of the running time from the parameters readed in the script
     dlg = wx.ProgressDialog("Script execution",
                            "Please wait...",
                            maximum = max,
@@ -121,8 +121,8 @@ def runScript(name):
     try:
         while keepGoing:
             count += 1
-            if count>=max : count=max-499
-            wx.MilliSleep(2)
+            if count>=max : count=max-1999
+            wx.MilliSleep(1)
             if thrd.IsRunning():
                 keepGoing=dlg.Update(count)
             else:

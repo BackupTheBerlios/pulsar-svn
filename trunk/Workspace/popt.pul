@@ -1,0 +1,83 @@
+# popt.pul
+#
+# PULSAR Project:
+#
+# version=1.0
+# Author: C. Fernandez
+#
+#------------------------------------------------------------------------------
+# License:
+#
+# Copyright (C) 2006-2007 Jean-Paul Amoureux, Christian Fernandez
+# JPA - Unite de Catalyse et Chimie du Solide, Lille, France.
+# CF  - Laboratoire Catalyse et Spectrochimie, Caen, France.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License (GPL)
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# To read the license please visit http://www.gnu.org/copyleft/gpl.html
+#------------------------------------------------------------------------------
+# Purpose:
+#   Performing a variation of one parameter
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# Important:
+#       try to keep the following order of the statements in your own script
+#------------------------------------------------------------------------------
+
+# start a new simulation
+#-----------------------
+sim1=Simulation(verbose=true)
+                                 # This open a new simulation instance with 
+                                 # the default proton frequency set to 400 Mhz
+                                 # (but we can also pass another proton frequency  
+                                 # e.g., sim1=Simulation("600 MHz")'          
+sim1.set_channel("23Na")         # define the observed nucleus (required)
+
+# Nucleus definition 
+#-------------------- 
+Na=Nucleus("23Na")                # create a new nucleus instance             
+Na.set_quadrupole(cq="2.5 mhz")   # default cq=0,eta=0,alpha=0,beta=0,gamma=0
+Na.set_chemicalshift(iso="5 ppm") # iso (always given in ppm)          
+                                  # default iso=0,csa=0,eta=0,alpha=0,beta=0,gamma=0 
+Na.set_lb("100 Hz")               # broadening (lorentzian)
+Na.set_gb(0)                      # gaussian (optional)
+Na.set_concentration(1.)          # optioanl (default=1.)
+sim1.add_nucleus(Na)              # add the Nucleus defined as Na in the simulation
+
+# simulation setting
+#-------------------                
+## Optional statements (to overset the default values)
+sim1.set_spinningspeed("10 kHz")# default STATIC for non spinning sample
+sim1.set_spinningangle(MAS)     # default MAS
+sim1.set_qfactor(100)           # Probe quality factor (default 0.001)
+sim1.set_npts("1 K")            # default 4096 or 4*K
+sim1.set_sw("20 kHz")           # default 10000.
+sim1.set_accuracy(8)            # default 8       
+sim1.set_rfstep(5)              # default 5
+
+## required statement
+sim1.select_nucleus()           # this statement is necessary 
+                                # to validate the nucleus list 
+                                # the two following statements must always appear after 'select_nucleus'
+sim1.set_nsb(AUTO)              # default 0 (AUTO means automatic calculation of nsb) 
+sim1.set_detect(ALL)            # default ALL (other values: CENTRAL, SATELLITE)
+
+# Run simulation (variation of the pulse length
+#----------------------------------------------
+sim1.reset_spectra()            # reset the current spectrum buffer
+for p1 in arange(0.5,5,.5):# (start,end,step)
+    sim1.reset_pulse()          # reset the pulse sequence
+    #Pulse sequence (one pulse): length is the pulse length, here variable
+    sim1.set_pulse(p1,powerS="100 kHz",offsetS=0,phaseS=0)
+    # start execution of this simulation
+    sim1.execute_pulsar()       
+    sim1.store_spectrum(data=p1,label="pulse length")     
+                                # storing the result in the buffer 
+                                # for display with some identifier
