@@ -37,13 +37,18 @@ sim1.set_channel("23Na")
 #-------------------- 
 Na=Nucleus("23Na")   
 Na.set_quadrupole(cq="1.5 mhz", eta=0.3)    
-Na.set_chemicalshift(iso="1 ppm")          
+Na.set_chemicalshift(iso="-2 ppm")          
 sim1.add_nucleus(Na)        
+
+Na2=Nucleus("23Na")   
+Na2.set_quadrupole(cq="0.5 mhz", eta=0.1)    
+Na2.set_chemicalshift(iso="0 ppm")         
+sim1.add_nucleus(Na2) 
 
 # simulation setting
 #-------------------            
-sim1.set_spinningspeed("1.5 kHz")              
-sim1.set_sw("20 kHz")
+sim1.set_spinningspeed("2 kHz") 
+sim1.set_sw("5 kHz")             
 
 # Pulse sequence
 #---------------
@@ -51,8 +56,16 @@ sim1.set_idealpulse()
 
 # Run simulations
 #----------------
-sim1.select_nucleus("23Na")
-sim1.set_nsb(AUTO) 
-sim1.execute_pulsar()           
-sim1.make_lb("100 Hz")        
-sim1.store_spectrum()   
+sim1.reset_spectra()            # reset the current spectrum buffer
+for index in range (2):
+    WRITE_STRING("\n\n simulation index :")
+    WRITE_STRING(str(index))
+    sim1.reset_nucleus()
+    sim1.select_nucleus("23Na",index)
+    sim1.set_nsb(AUTO) 
+    sim1.execute_pulsar()  
+    sim1.make_lb(index*100)                 
+    sim1.store_spectrum(index)   
+sim1.make_lb("100 Hz")
+conc=[1.,.5]
+sim1.sum_spectra(conc)       

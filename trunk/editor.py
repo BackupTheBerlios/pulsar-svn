@@ -23,11 +23,11 @@ PURPOSE OF THIS FILE:
 
  Class for the Pulsar Script Editor
 
+TODO: Make some cleaning of this file (that was mostly adapted from PyCrust)
+
 """
 __author__ = "C. Fernandez <christian.fernandez@ensicaen.fr>"
 __contributors__ =""
-__revision__ = "1"
-__revision_date__="2007.02.02" 
 
 
 
@@ -39,7 +39,6 @@ import editwindow as editwindow
 import dispatcher as dispatcher
 from buffer import Buffer
 from plot import *
-
 
 DEBUG = False
 SERIOUSDEBUG = False
@@ -139,14 +138,11 @@ class EditorFrame(frame.Frame):
             return
         text = notebook.GetPageText(selection)
 
-##CF ADDED Modified argument to handle SaveAs change of file
         if modified is not None:
             modified=os.path.split(modified)[1]
             notebook.SetPageText(selection, modified)
             
         window = notebook.GetPage(selection)
-##        if not (text.endswith("  ") or text.endswith(suffix)):
-##                 notebook.SetPageText(selection, text + "  ")
         if window.editor and window.editor.buffer.hasChanged():
             if text.endswith(suffix):
                 pass
@@ -206,8 +202,7 @@ class EditorFrame(frame.Frame):
         buffer.open(filename)
         self.setEditor(editor)
         self.editor.setFocus()
-        self.SendSizeEvent()
-        
+        self.SendSizeEvent()      
 
     def bufferDestroy(self):
         """Destroy the current buffer."""
@@ -219,7 +214,6 @@ class EditorFrame(frame.Frame):
             del self.buffers[self.buffer.id]
             self.buffer = None
             self.panel.Destroy()
-
 
     def bufferHasChanged(self):
         """Return True if buffer has changed since last save."""
@@ -256,17 +250,8 @@ class EditorFrame(frame.Frame):
         cancel = False
         return cancel
 
-##     def bufferPrint(self):
-##         """Print buffer."""
-##         pass
-
-##     def bufferRevert(self):
-##         """Revert buffer to version of file on disk."""
-##         pass
-
     def bufferSave(self):
-        """Save buffer to its file."""
-         
+        """Save buffer to its file."""  
         if self.buffer.doc.filepath:
             self.buffer.save()
             cancel = False
@@ -287,7 +272,6 @@ class EditorFrame(frame.Frame):
         result = saveSingle(directory=filedir)
         if result.path:
             self.buffer.saveAs(result.path)
-            #print filedir, self.buffer.doc.filedir,self.buffer.doc.filepath
             self._updateTabText(modified=self.buffer.doc.filepath)
             cancel = False
         else:
@@ -334,20 +318,7 @@ class EditorNotebookFrame(EditorFrame):
          
         self.setEditor(editor)
 
-##    def OnAbout(self, event):
-##        """Display an About window."""
-##         
-##        title = 'About PyAlaMode'
-##        text = 'Another fine, flaky program.'
-##        dialog = wx.MessageDialog(self, text, title,
-##                                  wx.OK | wx.ICON_INFORMATION)
-##        dialog.ShowModal()
-##        dialog.Destroy()
-
     def _updateTitle(self):
-##        """Show current title information."""
-##         
-##        pass
          title = self.GetTitle()
          if self.bufferHasChanged():
              if title.startswith('* '):
@@ -947,6 +918,8 @@ def fileDialog(parent=None, title='Open', directory=PULSARPATH, filename='',
                wildcard='All Files (*.*)|*.*',
                style=wx.OPEN | wx.MULTIPLE):
     """File dialog wrapper function."""
+    print "directory: "
+    print directory
     dialog = wx.FileDialog(parent, title, directory, filename,
                            wildcard, style)
     result = DialogResults(dialog.ShowModal())
@@ -955,6 +928,8 @@ def fileDialog(parent=None, title='Open', directory=PULSARPATH, filename='',
     else:
         result.paths = []
     dialog.Destroy()
+    print "file dialog "
+    print  result
     return result
 
 
@@ -970,8 +945,9 @@ def openSingle(parent=None, title='Open', directory=PULSARPATH, filename='',
     else:
         result.path = None
     dialog.Destroy()
+    print "open single  "
+    print result
     return result
-
 
 #----------------------------------------------------------------------------
 def openMultiple(parent=None, title='Open', directory=PULSARPATH, filename='',

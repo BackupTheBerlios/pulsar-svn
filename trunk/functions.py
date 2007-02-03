@@ -27,9 +27,6 @@ PURPOSE OF THIS FILE:
 """
 __author__ = "C. Fernandez <christian.fernandez@ensicaen.fr>"
 __contributors__ =""
-__revision__ = "1"
-__revision_date__="2007.02.02" 
-
 
 #-------------------------------------------------------------------------------
 #  Imports:
@@ -55,8 +52,8 @@ from debug import *
 # module constants
 #------------------
 #logicals
-TRUE = true = YES = Yes = yes = True
-FALSE = false = NO = No = no = False
+TRUE = true = YES = Yes = yes = Y = y = True
+FALSE = false = NO = No = no = N = n = False
 
 #units
 HZ = Hz = hz = 1.0
@@ -73,7 +70,7 @@ K = k = 1024   #kpoint
 #miscellaneous
 MAS = mas = 54.735610
 STATIC = static = 0
-gamma_H = 26.7510e7/(2.0*pi)
+GAMMA_H = gamma_H = 26.7510e7/(2.0*pi)
 AUTO = auto = -999
 FULL = full = -998
 ALL = all = 0
@@ -114,7 +111,7 @@ class Simulation:
         self.reset_nucleus()
         self.reset_spectra()
 
-        # iniitlise some basic parameters for the simulation
+        # initialise some basic parameters for the simulation
         self.set_frequency(protonfrequency)            
         self.spinningspeed=0.
         self.spinningangle=MAS
@@ -123,7 +120,7 @@ class Simulation:
         self.rfstep=5
         self.npts=4*K
         self.sw=10*kHz
-        self.aliasing="no"
+        self.aliasing=no
         self.nsb=0
         self.nall=0
         
@@ -142,8 +139,7 @@ class Simulation:
         #inititialise the array of broadening parameters
         self.lb=[] 
         self.gb=[]
-        
-        
+                
     #----------------------
     def reset_pulsar(self):
     #----------------------
@@ -171,8 +167,7 @@ class Simulation:
         DEBUG_MSG("RESET PULSE SEQUENCE")
         parameters.pulse = []
         parameters.delay = []
-        parameters.coher = []
-                       
+        parameters.coher = []               
 
     #-------------------------------------------------------
     def execute_pulsar(self,pulsarverbose=False):
@@ -193,6 +188,7 @@ class Simulation:
         
         # Settings in case of spinning sideband aliasing
         if self.aliasing:
+            DEBUG_MSG("ALIASING=YES")
             self.set_nsb("FULL")
             parameters.nsb = self.nsb
             parameters.sw = self.spinningspeed*float(self.nsb*2)
@@ -200,9 +196,8 @@ class Simulation:
 
         # Display the current parameters if needed
         self.display()
-
+        
         #execute the simulation
-        #compute(pydebug_msg,pywrite_string,pywrite_intvalue)
         compute(pydebug_msg,pywrite_string)
            
     #-----------------
@@ -214,7 +209,7 @@ class Simulation:
             WRITE_STRING("\tSpectrometer field: " + strclean(parameters.spectrometerfield,5)+" Tesla")
             WRITE_STRING("\tProton frequency: " + strclean(parameters.protonfrequency/mhz,5)+" MHz")
             WRITE_STRING("\nPROBEHEAD:")
-            WRITE_STRING("----------")
+            WRITE_STRING("------------")
             WRITE_STRING("\tspinning speed: " + str(parameters.spinningspeed/khz)+" kHz")
             WRITE_STRING("\tspinning angle: " + strclean(parameters.spinningangle,8)+" deg.")
             WRITE_STRING("\tquality factor: " + str(parameters.qfactor))
@@ -345,9 +340,9 @@ class Simulation:
         self.npts = int(2**round(log(self.npts+1)/log(2)))
         self.npts = max(min(self.npts,parameters.nptsmax),128)
 
-    #--------------------
-    def set_sw(self, sw, aliasing="no"):
-    #--------------------
+    #---------------------------------
+    def set_sw(self, sw, aliasing=no):
+    #---------------------------------
         """
         Change the spectral width
         """
@@ -429,9 +424,9 @@ class Simulation:
         self.current_spectrum = array(spec)
         WRITE_STRING("\nA spectrum has been added to collection spectra ("+str(len(self.collection_spectra))+")") 
          
-    #-------------------------------------
-    def sum_spectra(self, *concentration):
-    #-------------------------------------
+    #------------------------------------------
+    def sum_spectra(self, *concentration, *lb):
+    #------------------------------------------
         """
         sum the spectra in the collection spectra  
         """
@@ -481,7 +476,7 @@ class Simulation:
         Write spectra into a file in various format
         args: filename - name of the output file (default:'pulsar.spe'
         """
-        DEBUG_MSG("WRITE_SPECTRA")
+        DEBUG_MSG("WRITE_SPECTRA "+filename)
         
         # TODO : implement various format
         n = self.npts
@@ -538,15 +533,15 @@ class Simulation:
                 
             #Make a correction of the spec by creating actual Abs and Disp component
             fid=[]
-            #try:
-            fid = fft(array(spec,'D'),None, -1,0)
-            for i in range(n/2,n):
-                fid[i]=complex(0.,0.)  #dissymetrisation
+            try:
+                fid = fft(array(spec,'D'),None, -1,0)
+                for i in range(n/2,n):
+                    fid[i]=complex(0.,0.)  #dissymetrisation
                    
-            spec= ifft(fid,None, -1,1)
+                spec= ifft(fid,None, -1,1)
 
-            #except:
-            #    print "error in fft"
+            except:
+                WRITE_STRING("ERROR in fft")
 
             for i in range(len(spec)):
                 line = string.strip(repr(spec[i].imag))+" "+string.strip(repr(spec[i].real))+'\n'
@@ -591,7 +586,7 @@ class Simulation:
         if not nucleus:
             WRITE_STRING("\nError in add_nucleus - check the argument of the function")
         self.sample.add_nucleus(nucleus)
-
+        
     #-----------------------------
     def set_channel(self,*channel):
     #------------------------------
@@ -609,7 +604,7 @@ class Simulation:
             WRITE_STRING("\nError in set_channel")
             
     #-----------------------------------------------------
-    def set_nucleus(self,nucleus=None,index=None):
+    def select_nucleus(self,nucleus=None,index=None):
     #-----------------------------------------------------
         """
         define the nucleus used in the simulation
@@ -978,202 +973,6 @@ class Nucleus:
             self.betaq = 0.0
             self.gammaq = 0.0
 
-# MODULE FUNCTIONS
-#=================
-
-def evaluate(st,isppm=False):
-#----------------------------
-    """
-    Allow the evaluation of strings containing units e.g., '10 kHz'
-    Return False if there is an error
-    """
-    res=False
-    if type(st) is types.StringType:
-        st=string.lower(st)
-        p = re.compile('\s+')
-        m = p.split(string.strip(st))
-        try:
-            res = eval(m[0])
-        except NameError:
-            WRITE_STRING("*** ERROR *** during the evaluation of '"+st+"'  >>   "+m[0]+" is not defined")
-            
-        except SyntaxError:
-            WRITE_STRING("*** ERROR *** Syntax error in '"+st+"'")   
-        if len(m) > 1:
-            if isppm :             
-                if string.strip(m[1]) != "ppm":
-                    WRITE_STRING("ERROR of unit - 'ppm' required")     
-            else:
-                if string.strip(m[1]) != "ppm":
-                    try:
-                        res=res*eval(m[1])
-                    except NameError:
-                        WRITE_STRING("*** ERROR *** during the evaluation of '"+st+"'  >>  "+m[1]+" is not defined")                       
-                    except SyntaxError:
-                        WRITE_STRING("*** ERROR *** Syntax error in '"+st+"'")        
-                else:
-                    WRITE_STRING("ERROR of unit - 'ppm' cannot be used here")
-                    exit()
-    else:
-        res = st
-    return res      
-
-# strclean---------
-def strclean(st,n):
-#------------------    
-    return str(st)[0:n]
-   
-# showmatrice-----
-def showmatrix(d):
-#-----------------
-    nr = len(d)
-    nc = len(d[0])
-    ii = 2
-    strg=''
-    while ii < nr:
-        jj = 2
-        while jj < nc:
-            strg=strg + " "+str((int(d[ii,jj]*100.))/100.)
-            jj = jj + 1
-        str=str+"\n"  
-        ii = ii + 1
-    WRITE_STRING(strg)    
-      
-# dipole_from_distance-------------------
-def dipole_from_distance(distance,f1,f2):
-#----------------------------------------
-    """
-    'Compute dipolar coupling from distances' 
-    args:
-        distance - distances between nucleus
-        f1, f2 - larmor frequency of the two nuclei 
-    """
-    DEBUG_MSG("dipole from distance")
-    field = parameters.spectrometerfield
-    h = 6.6260693e-34
-    mu0 = 4*pi*1.0e-7
-    f1 = f1/field  #conversion en gamma
-    f2 = f2/field
-    dipolar = abs(f1*f2*mu0*h/(distance*1.0e-10)**3/4/pi)
-    return dipolar
-                 
-
-# indirect j coupling --------------------------------------------------------------
-def set_indirect(index,second,j = 0,delta = 0,eta = 0,alpha = 0,beta = 0,gamma = 0):
-#-----------------------------------------------------------------------------------
-    """
-    set_indirect -- 
-    'Set the indirect J coupling between a pair of nucleus'
-    args:
-        index - index of the first nucleus (defined previously by set_nucleus)
-                Required to be one.
-        second - index of the second nucleus (defined previously by set_nucleus)
-        j - J coupling value
-        delta - ansotropy of J
-        alpha, beta, gamma - euler angles with respect to the molecular frame
-    """
-    DEBUG_MSG("Set Indirect")
-    if parameters.nucleus == None: 
-        WRITE_STRING("\n*set_indirect*\nERROR: No nucleus were defined yet. Cannot set indirect j coupling'!\n")
-        WRITE_STRING(set_indirect.__doc__)
-        exit()
-    else:
-        if index != 1: 
-            WRITE_STRING("\n*set_indirect*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
-            WRITE_STRING("It has been automatically changed.")
-            index = 1
-        if second == 1:   
-            WRITE_STRING("\n*set_indirect*\nWARNING: the index of the second nucleus is required to be different of the first index!")
-            WRITE_STRING("It has been automatically changed to 'index+1'.")
-            second = index + 1
-        if second > len(parameters.nucleus): 
-            WRITE_STRING("\n*set_indirect*\nERROR: the second index does not correspond to an existing nucleus!\n")
-            WRITE_STRING(set_indirect.__doc__)
-            exit()
-    j = evaluate(j)
-    delta = evaluate(delta)
-    eta = evaluate(eta)
-    alpha = evaluate(alpha)
-    beta = evaluate(beta) 
-    gamma = evaluate(gamma)  
-    if parameters.indirect==None:
-        if (verbose) : WRITE_STRING("\nindirect J coupling:")
-        ar=[[index,second,j,delta,eta,alpha,beta,gamma]]   
-    else:
-        size=len(parameters.indirect) 
-        ar=[[0,0,0,0,0,0,0,0] for i in range(size+1)]
-        i=0
-        while i < size :
-            ar[i]=[int(parameters.indirect[i,0]),int(parameters.indirect[i,1]),parameters.indirect[i,2], parameters.indirect[i,3], parameters.indirect[i,4],parameters.indirect[i,5],parameters.indirect[i,6],parameters.indirect[i,7]]  #copy of the previous elements
-            i=i+1
-        ar[size]=[index,second,j,delta,eta,alpha,beta,gamma]       
-    parameters.indirect=ar                                          #allocate or reallocate and initialize       
-    size=len(parameters.indirect)
-    i=size-1
-    if (verbose) :
-        WRITE_STRING("\tIndirect J coupling ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,2])+" Hz")
-        if parameters.indirect[i,3]!=0 : WRITE_STRING("\tdelta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,3])+" Hz")
-        if parameters.indirect[i,3]!=0 : WRITE_STRING("\teta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,4]))
-        if parameters.indirect[i,3]!=0 : WRITE_STRING("\teuler J ("+str(index)+","+str(second)+"): ["+ str(parameters.indirect[i,5])+","+str(parameters.indirect[i,6])+","+str(parameters.indirect[i,7])+"]")     
-
-# direct dipolar coupling -----------------------------------------
-def set_dipole(index,second,d=0,distance=0,alpha=0,beta=0,gamma=0):
-#------------------------------------------------------------------
-    """
-    -- set_dipole -- 
-    'Set the direct dipole coupling between a pair of nucleus'
-    args:
-        index - index of the first nucleus (defined previously by set_nucleus)
-                Required to be one.
-        second - index of the second nucleus (defined previously by set_nucleus)
-        d - dipolar coupling value
-        distances - distance between nucleus in angstrom (used only if d=0)
-        alpha, beta, gamma - euler angles with respect to the molecular frame
-    """
-    DEBUG_MSG("Set Dipole")
-    if parameters.nucleus==None: 
-        WRITE_STRING("\n*set_dipole*\nERROR: No nucleus were defined yet. Cannot set dipole coupling'!\n")
-        WRITE_STRING(set_dipole.__doc__)
-        exit()
-    else:
-        if index!=1: 
-            WRITE_STRING("\n*set_dipole*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
-            WRITE_STRING("It has been automatically changed.")
-            index=1
-        if second==1:   
-            WRITE_STRING("\n*set_dipole*\nWARNING: the index of the second nucleus is required to be different of the first index!")
-            WRITE_STRING("It has been automatically changed to 'index+1'.")
-            second=index+1
-        if second>len(parameters.nucleus): 
-            WRITE_STRING("\n*set_dipole*\nERROR: the second index does not correspond to an existing nucleus!\n")
-            WRITE_STRING(set_dipole.__doc__)
-            exit()
-    d=evaluate(d)
-    distance=evaluate(distance)
-    if (distance!=0) and (d==0) : d=dipole_from_distance(distance,parameters.nucleus[index-1,2],parameters.nucleus[second-1,2])
-    alpha=evaluate(alpha)
-    beta=evaluate(beta) 
-    gamma=evaluate(gamma)
-    if parameters.dipole==None:
-        if (verbose) : WRITE_STRING("\ndipolar coupling:")
-        ar=[[index,second,d,distance,alpha,beta,gamma]]   
-    else:
-        size=len(parameters.dipole) 
-        ar=[[0,0,0,0,0,0,0] for i in range(size+1)]
-        #copy of the previous elements
-        i=0
-        while i < size :
-            ar[i]=[int(parameters.dipole[i,0]),int(parameters.dipole[i,1]),parameters.dipole[i,2], parameters.dipole[i,3], parameters.dipole[i,4],parameters.dipole[i,5],parameters.dipole[i,6]] 
-            i=i+1
-        ar[size]=[index,second,d,distance,alpha,beta,gamma]       
-    parameters.dipole=ar                                          #allocate or reallocate and initialize       
-     
-    size=len(parameters.dipole)
-    i=size-1
-    if (verbose) : WRITE_STRING("\tdipolar coupling ("+str(index)+","+str(second)+"): "+str(parameters.dipole[i,2])+" Hz")
-    if (verbose) : WRITE_STRING("\tpolar angles [alpha,beta] ("+str(index)+","+str(second)+"): ["+ str(parameters.dipole[i,4])+","+str(parameters.dipole[i,5])+","+str(parameters.dipole[i,6])+"]")     
-
-
 #==============================================================================    
 class PulseSequence:
 #==============================================================================    
@@ -1481,6 +1280,205 @@ class PulseSequence:
         self.ctpall.append(list)
         parameters.ctp=self.ctpall
         self.print_ctp()
+
+
+# DIPOLAR COUPLINGS
+#====================
+      
+# dipole_from_distance-------------------
+def dipole_from_distance(distance,f1,f2):
+#----------------------------------------
+    """
+    'Compute dipolar coupling from distances' 
+    args:
+        distance - distances between nucleus
+        f1, f2 - larmor frequency of the two nuclei 
+    """
+    DEBUG_MSG("dipole from distance")
+    field = parameters.spectrometerfield
+    h = 6.6260693e-34
+    mu0 = 4*pi*1.0e-7
+    f1 = f1/field  #conversion en gamma
+    f2 = f2/field
+    dipolar = abs(f1*f2*mu0*h/(distance*1.0e-10)**3/4/pi)
+    return dipolar
+                 
+
+# indirect j coupling --------------------------------------------------------------
+def set_indirect(index,second,j = 0,delta = 0,eta = 0,alpha = 0,beta = 0,gamma = 0):
+#-----------------------------------------------------------------------------------
+    """
+    set_indirect -- 
+    'Set the indirect J coupling between a pair of nucleus'
+    args:
+        index - index of the first nucleus (defined previously by set_nucleus)
+                Required to be one.
+        second - index of the second nucleus (defined previously by set_nucleus)
+        j - J coupling value
+        delta - ansotropy of J
+        alpha, beta, gamma - euler angles with respect to the molecular frame
+    """
+    DEBUG_MSG("Set Indirect")
+    if parameters.nucleus == None: 
+        WRITE_STRING("\n*set_indirect*\nERROR: No nucleus were defined yet. Cannot set indirect j coupling'!\n")
+        WRITE_STRING(set_indirect.__doc__)
+        exit()
+    else:
+        if index != 1: 
+            WRITE_STRING("\n*set_indirect*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
+            WRITE_STRING("It has been automatically changed.")
+            index = 1
+        if second == 1:   
+            WRITE_STRING("\n*set_indirect*\nWARNING: the index of the second nucleus is required to be different of the first index!")
+            WRITE_STRING("It has been automatically changed to 'index+1'.")
+            second = index + 1
+        if second > len(parameters.nucleus): 
+            WRITE_STRING("\n*set_indirect*\nERROR: the second index does not correspond to an existing nucleus!\n")
+            WRITE_STRING(set_indirect.__doc__)
+            exit()
+    j = evaluate(j)
+    delta = evaluate(delta)
+    eta = evaluate(eta)
+    alpha = evaluate(alpha)
+    beta = evaluate(beta) 
+    gamma = evaluate(gamma)  
+    if parameters.indirect==None:
+        if (verbose) : WRITE_STRING("\nindirect J coupling:")
+        ar=[[index,second,j,delta,eta,alpha,beta,gamma]]   
+    else:
+        size=len(parameters.indirect) 
+        ar=[[0,0,0,0,0,0,0,0] for i in range(size+1)]
+        i=0
+        while i < size :
+            ar[i]=[int(parameters.indirect[i,0]),int(parameters.indirect[i,1]),parameters.indirect[i,2], parameters.indirect[i,3], parameters.indirect[i,4],parameters.indirect[i,5],parameters.indirect[i,6],parameters.indirect[i,7]]  #copy of the previous elements
+            i=i+1
+        ar[size]=[index,second,j,delta,eta,alpha,beta,gamma]       
+    parameters.indirect=ar                                          #allocate or reallocate and initialize       
+    size=len(parameters.indirect)
+    i=size-1
+    if (verbose) :
+        WRITE_STRING("\tIndirect J coupling ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,2])+" Hz")
+        if parameters.indirect[i,3]!=0 : WRITE_STRING("\tdelta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,3])+" Hz")
+        if parameters.indirect[i,3]!=0 : WRITE_STRING("\teta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,4]))
+        if parameters.indirect[i,3]!=0 : WRITE_STRING("\teuler J ("+str(index)+","+str(second)+"): ["+ str(parameters.indirect[i,5])+","+str(parameters.indirect[i,6])+","+str(parameters.indirect[i,7])+"]")     
+
+# direct dipolar coupling -----------------------------------------
+def set_dipole(index,second,d=0,distance=0,alpha=0,beta=0,gamma=0):
+#------------------------------------------------------------------
+    """
+    -- set_dipole -- 
+    'Set the direct dipole coupling between a pair of nucleus'
+    args:
+        index - index of the first nucleus (defined previously by set_nucleus)
+                Required to be one.
+        second - index of the second nucleus (defined previously by set_nucleus)
+        d - dipolar coupling value
+        distances - distance between nucleus in angstrom (used only if d=0)
+        alpha, beta, gamma - euler angles with respect to the molecular frame
+    """
+    DEBUG_MSG("Set Dipole")
+    if parameters.nucleus==None: 
+        WRITE_STRING("\n*set_dipole*\nERROR: No nucleus were defined yet. Cannot set dipole coupling'!\n")
+        WRITE_STRING(set_dipole.__doc__)
+        exit()
+    else:
+        if index!=1: 
+            WRITE_STRING("\n*set_dipole*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
+            WRITE_STRING("It has been automatically changed.")
+            index=1
+        if second==1:   
+            WRITE_STRING("\n*set_dipole*\nWARNING: the index of the second nucleus is required to be different of the first index!")
+            WRITE_STRING("It has been automatically changed to 'index+1'.")
+            second=index+1
+        if second>len(parameters.nucleus): 
+            WRITE_STRING("\n*set_dipole*\nERROR: the second index does not correspond to an existing nucleus!\n")
+            WRITE_STRING(set_dipole.__doc__)
+            exit()
+    d=evaluate(d)
+    distance=evaluate(distance)
+    if (distance!=0) and (d==0) : d=dipole_from_distance(distance,parameters.nucleus[index-1,2],parameters.nucleus[second-1,2])
+    alpha=evaluate(alpha)
+    beta=evaluate(beta) 
+    gamma=evaluate(gamma)
+    if parameters.dipole==None:
+        if (verbose) : WRITE_STRING("\ndipolar coupling:")
+        ar=[[index,second,d,distance,alpha,beta,gamma]]   
+    else:
+        size=len(parameters.dipole) 
+        ar=[[0,0,0,0,0,0,0] for i in range(size+1)]
+        #copy of the previous elements
+        i=0
+        while i < size :
+            ar[i]=[int(parameters.dipole[i,0]),int(parameters.dipole[i,1]),parameters.dipole[i,2], parameters.dipole[i,3], parameters.dipole[i,4],parameters.dipole[i,5],parameters.dipole[i,6]] 
+            i=i+1
+        ar[size]=[index,second,d,distance,alpha,beta,gamma]       
+    parameters.dipole=ar                                          #allocate or reallocate and initialize       
+     
+    size=len(parameters.dipole)
+    i=size-1
+    if (verbose) : WRITE_STRING("\tdipolar coupling ("+str(index)+","+str(second)+"): "+str(parameters.dipole[i,2])+" Hz")
+    if (verbose) : WRITE_STRING("\tpolar angles [alpha,beta] ("+str(index)+","+str(second)+"): ["+ str(parameters.dipole[i,4])+","+str(parameters.dipole[i,5])+","+str(parameters.dipole[i,6])+"]")     
+
+#  MODULE FUNCTIONS
+#==================
+
+def evaluate(st,isppm=False):
+#----------------------------
+    """
+    Allow the evaluation of strings containing units e.g., '10 kHz'
+    Return False if there is an error
+    """
+    res=False
+    if type(st) is types.StringType:
+        st=string.upper(st)
+        p = re.compile('\s+')
+        m = p.split(string.strip(st))
+        try:
+            res = eval(m[0])
+        except NameError:
+            WRITE_STRING("*** ERROR *** during the evaluation of '"+st+"'  >>   "+m[0]+" is not defined")
+            
+        except SyntaxError:
+            WRITE_STRING("*** ERROR *** Syntax error in '"+st+"'")   
+        if len(m) > 1:
+            if isppm :             
+                if string.strip(m[1]) != "ppm":
+                    WRITE_STRING("ERROR of unit - 'ppm' required")     
+            else:
+                if string.strip(m[1]) != "ppm":
+                    try:
+                        res=res*eval(m[1])
+                    except NameError:
+                        WRITE_STRING("*** ERROR *** during the evaluation of '"+st+"'  >>  "+m[1]+" is not defined")                       
+                    except SyntaxError:
+                        WRITE_STRING("*** ERROR *** Syntax error in '"+st+"'")        
+                else:
+                    WRITE_STRING("ERROR of unit - 'ppm' cannot be used here")
+                    exit()
+    else:
+        res = st
+    return res      
+
+# strclean---------
+def strclean(st,n):
+#------------------    
+    return str(st)[0:n]
+   
+# showmatrice-----
+def showmatrix(d):
+#-----------------
+    nr = len(d)
+    nc = len(d[0])
+    ii = 2
+    strg=''
+    while ii < nr:
+        jj = 2
+        while jj < nc:
+            strg=strg + " "+str((int(d[ii,jj]*100.))/100.)
+            jj = jj + 1
+        str=str+"\n"  
+        ii = ii + 1
+    WRITE_STRING(strg)    
 
 #------------------------------------------------------------------------------
 def nowhitespace(st):

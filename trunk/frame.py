@@ -26,15 +26,12 @@ PURPOSE OF THIS FILE:
 """
 __author__ = "C. Fernandez <christian.fernandez@ensicaen.fr>"
 __contributors__ =""
-__revision__ = "1"
-__revision_date__="2007.02.02"
 
 import wx
 import images as images
 
 ID_NEW = wx.ID_NEW
 ID_OPEN = wx.ID_OPEN
-ID_REVERT = wx.ID_REVERT
 ID_CLOSE = wx.ID_CLOSE
 ID_SAVE = wx.ID_SAVE
 ID_SAVEAS = wx.ID_SAVEAS
@@ -79,8 +76,6 @@ class Frame(wx.Frame):
         m.Append(ID_OPEN, '&Open... \tCtrl+O',
                  'Open file')
         m.AppendSeparator()
-        m.Append(ID_REVERT, '&Revert \tCtrl+R',
-                 'Revert to last saved version')
         m.Append(ID_CLOSE, '&Close \tCtrl+W',
                  'Close file')
         m.AppendSeparator()
@@ -131,7 +126,6 @@ class Frame(wx.Frame):
 
         wx.EVT_MENU(self, ID_NEW, self.OnFileNew)
         wx.EVT_MENU(self, ID_OPEN, self.OnFileOpen)
-        wx.EVT_MENU(self, ID_REVERT, self.OnFileRevert)
         wx.EVT_MENU(self, ID_CLOSE, self.OnFileClose)
         wx.EVT_MENU(self, ID_SAVE, self.OnFileSave)
         wx.EVT_MENU(self, ID_SAVEAS, self.OnFileSaveAs)
@@ -151,7 +145,6 @@ class Frame(wx.Frame):
         
         wx.EVT_UPDATE_UI(self, ID_NEW, self.OnUpdateMenu)
         wx.EVT_UPDATE_UI(self, ID_OPEN, self.OnUpdateMenu)
-        wx.EVT_UPDATE_UI(self, ID_REVERT, self.OnUpdateMenu)
         wx.EVT_UPDATE_UI(self, ID_CLOSE, self.OnUpdateMenu)
         wx.EVT_UPDATE_UI(self, ID_SAVE, self.OnUpdateMenu)
         wx.EVT_UPDATE_UI(self, ID_SAVEAS, self.OnUpdateMenu)
@@ -172,9 +165,6 @@ class Frame(wx.Frame):
 
     def OnFileOpen(self, event):
         self.bufferOpen()
-
-    def OnFileRevert(self, event):
-        self.bufferRevert()
 
     def OnFileClose(self, event):
         self.bufferClose()
@@ -250,9 +240,6 @@ class Frame(wx.Frame):
                 event.Enable(hasattr(self, 'bufferNew'))
             elif id == ID_OPEN:
                 event.Enable(hasattr(self, 'bufferOpen'))
-            elif id == ID_REVERT:
-                event.Enable(hasattr(self, 'bufferRevert')
-                             and self.hasBuffer())
             elif id == ID_CLOSE:
                 event.Enable(hasattr(self, 'bufferClose')
                              and self.hasBuffer())

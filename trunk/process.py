@@ -26,8 +26,6 @@ PURPOSE OF THIS FILE:
 """
 __author__ = "C. Fernandez <christian.fernandez@ensicaen.fr>"
 __contributors__ =""
-__revision__ = "1"
-__revision_date__="2007.02.02" 
 
 import wx
 import os
@@ -70,7 +68,9 @@ def runScript(name):
 
     # Perform before run commands
     #----------------------------
-    header  = '_script="' + dirname + '/' + scriptname + '"'+ '\n'
+
+    header  = '_script="' + string.join(dirname.split('\\'),'/') + '/' + scriptname + '"'+ '\n'
+    # to avoid a bug with filename all \ are replaced with /.
     header += "WRITE_STRING('PULSAR_START_OF_PROCESS')\n"
 
     # Add the header to the script

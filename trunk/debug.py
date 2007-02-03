@@ -27,9 +27,6 @@ PURPOSE OF THIS FILE:
 """
 __author__ = "C. Fernandez <christian.fernandez@ensicaen.fr>"
 __contributors__ =""
-__revision__ = "1"
-__revision_date__="2007.02.02" 
-
 
 import sys
 import wx

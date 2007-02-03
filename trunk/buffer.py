@@ -26,9 +26,6 @@ PURPOSE OF THIS FILE:
 """
 __author__ = "C. Fernandez <christian.fernandez@ensicaen.fr>"
 __contributors__ =""
-__revision__ = "1"
-__revision_date__="2007.02.02" 
-
 
 import os
 import sys
@@ -94,7 +91,9 @@ class Buffer:
         if self.editor:
             text = self.doc.read()
             self.editor._setBuffer(buffer=self, text=text)
-
+        print "buffer.py filename: ",
+        print filename
+        
     def overwriteConfirm(filepath):
         """Confirm overwriting an existing file."""
         return False
