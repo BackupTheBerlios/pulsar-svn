@@ -1,4 +1,4 @@
-!     Last change:  CF    1 Feb 2007   10:09 pm
+!     Last change:  CF    3 Feb 2007   12:31 pm
 !
 !$parameters.f95
 !
@@ -97,6 +97,9 @@ module parameters
   real*8, allocatable :: dipole(:,:)             !i, j, dipole, euler angles
   real*8, allocatable :: quadrupole(:,:)         !quadrupolar constant, eta and euler angle
   real*8, allocatable :: t2(:,:)                 !t2 homogeneous relaxation time
+  real*8, allocatable :: lb(:,:)                 !line broadening (lorentzian)
+  real*8, allocatable :: gb(:,:)                 !line broadening (gaussian)
+  real*8, allocatable :: concentration(:,:)      !concentration
 
                                                  !simulation_parameters
                                                  !---------------------
@@ -107,7 +110,6 @@ module parameters
   real*8    :: sw=eps                            !total spectral width
   integer*8 :: ncycles=-1                        !number of period (pulse+delay) in the sequence
   integer*8 :: nall=999                          !undefined=999, all transitions :0, central: 1, satellite: 2
-
                                                  !pulses
                                                  !------
   REAL*8, ALLOCATABLE :: pulseangle(:)           !pulse angle
