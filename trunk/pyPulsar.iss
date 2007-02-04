@@ -58,7 +58,7 @@ Source: Images\pulsar.ico; DestDir: {app}
 Source: Images\file.ico; DestDir: {app}
 
 [Icons]
-Name: {group}\{#MyAppName}; Filename: {app}\pypulsar.exe; IconFilename: {app}\pulsar.ico; WorkingDir: {app}; Tasks: ; Languages: 
+Name: {group}\{#MyAppName}; Filename: {app}\pypulsar.exe; IconFilename: {app}\pulsar.ico; WorkingDir: {app}; Tasks: " quicklaunchicon desktopicon"; IconIndex: 0
 Name: {group}\{cm:UninstallProgram,{#MyAppName}}; Filename: {uninstallexe}
 Name: {userdesktop}\{#MyAppName}; Filename: {app}\pypulsar.exe; Tasks: desktopicon; IconFilename: {app}\pulsar.ico; WorkingDir: {app}
 Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}; Filename: {app}\pypulsar.exe; Tasks: quicklaunchicon; IconFilename: {app}\pulsar.ico; WorkingDir: {app}
@@ -67,12 +67,12 @@ Name: {group}\{cm:UninstallProgram, {#MyAppName}}; Filename: {uninstallexe}
 [Run]
 Filename: {app}\{#MyAppExeName}; Description: {cm:LaunchProgram,{#MyAppName}}; Flags: nowait postinstall skipifsilent; Tasks: ; Languages: 
 
-[Registry]
-Root: HKCR; SubKey: .*.pul; ValueType: string; ValueData: Pulsarscript; Flags: uninsdeletekey
-Root: HKCR; SubKey: Pulsarscript; ValueType: string; ValueData: Script file for pyPULSAR; Flags: uninsdeletekey
-Root: HKCR; SubKey: Pulsarscript\Shell\Open\Command; ValueType: string; ValueData: """{app}\pypulsar.exe"" ""%1"""; Flags: uninsdeletevalue
-Root: HKCR; Subkey: Pulsarscript\DefaultIcon; ValueType: string; ValueData: {app}\file.ico,-1; Flags: uninsdeletevalue
 [INI]
 Filename: {app}\pyPulsar Web Site.url; Section: InternetShortcut; Key: URL; String: http://www-lcs.ensicaen.fr/
 [UninstallDelete]
 Type: files; Name: {app}\pyPulsar Web Site.url
+[Registry]
+Root: HKCR; SubKey: .pul; ValueType: string; ValueData: Pulsar script; Flags: uninsdeletekey
+Root: HKCR; SubKey: Pulsar script; ValueType: string; ValueData: Script input file for PyPulsar; Flags: uninsdeletekey
+Root: HKCR; SubKey: Pulsar script\Shell\Open\Command; ValueType: string; ValueData: """{app}\pypulsar.exe"" ""%1"""; Flags: uninsdeletevalue
+Root: HKCR; Subkey: Pulsar script\DefaultIcon; ValueType: string; ValueData: {app}\file.ico,0; Flags: uninsdeletevalue

@@ -115,5 +115,5 @@ def main(argv):
         if extension != '.pul':
             print "\n*** ERROR: only file with the *.pul extension can be executed by Pulsar.py ***"
             raise SystemExit
-        app = Pulsar(filename=name)
+        app = PulsarApp(filename=name)
         app.MainLoop()        

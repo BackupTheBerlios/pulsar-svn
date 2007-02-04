@@ -25,10 +25,6 @@ PURPOSE OF THIS FILE:
  and some other informations.
 
 """
-
-__PROJECT_AUTHORS__ = "C. Fernandez <christian.fernandez@ensicaen.fr>, \
-	         J.P. Amoureux <jean-paul.amoureux@univ-lille1.fr>"
-__PROJECT_CONTRIBUTORS__ =""
 __PROJECT_VERSION__ = '0.1.rc1'
-__PROJECT_REVISION__ = '30'
-__PROJECT_REVISION_DATE__="2007.02.03" 
+__PROJECT_REVISION__ = '31'
+__PROJECT_REVISION_DATE__="2007.02.04" 

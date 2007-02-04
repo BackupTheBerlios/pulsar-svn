@@ -53,7 +53,8 @@ python %BUILD% %SRCDIR%\pypulsar.spec
 
 :: Copy some missing files (needed to make the executable working with MatplotLib and Scipy
 ::------------------------------------------------------------------------------------------
-xcopy %SRCDIR%\Add_to_dist\*.* "%DESTDIR%\"  /S /D /Y
+xcopy %SRCDIR%\Add_to_dist\*.* %DESTDIR%\   /S /D /Y
+xcopy %SRCDIR%\Workspace\*.*   %DESTDIR%\Workspace\   /S /D /Y
 
 :: Execute the application
 ::------------------------

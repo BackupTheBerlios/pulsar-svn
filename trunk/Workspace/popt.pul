@@ -43,7 +43,7 @@ sim1.set_channel("23Na")         # define the observed nucleus (required)
 # Nucleus definition 
 #-------------------- 
 Na=Nucleus("23Na")                # create a new nucleus instance             
-Na.set_quadrupole(cq="2.5 mhz")   # default cq=0,eta=0,alpha=0,beta=0,gamma=0
+Na.set_quadrupole(cq="3.5 mhz")   # default cq=0,eta=0,alpha=0,beta=0,gamma=0
 Na.set_chemicalshift(iso="5 ppm") # iso (always given in ppm)          
                                   # default iso=0,csa=0,eta=0,alpha=0,beta=0,gamma=0 
 Na.set_lb("100 Hz")               # broadening (lorentzian)
