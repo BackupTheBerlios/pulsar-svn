@@ -45,7 +45,7 @@ Name: quicklaunchicon; Description: {cm:CreateQuickLaunchIcon}; GroupDescription
 [Files]
 Source: {#MyAppVerName}\pypulsar.exe; DestDir: {app}; Flags: ignoreversion; Tasks: ; Languages: 
 Source: {#MyAppVerName}\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs promptifolder
-Source: Workspace\*.pul; DestDir: {app}\Workspace; Flags: ignoreversion recursesubdirs createallsubdirs promptifolder
+Source: Workspace\*.pul; DestDir: {app}\Workspace; Flags: ignoreversion recursesubdirs createallsubdirs promptifolder uninsneveruninstall
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 Source: README-First.txt; DestDir: {app}; Flags: isreadme
 Source: TODO.txt; DestDir: {app}
@@ -55,24 +55,30 @@ Source: INSTALL.txt; DestDir: {app}
 Source: NEWS.txt; DestDir: {app}
 Source: CHANGES.txt; DestDir: {app}
 Source: Images\pulsar.ico; DestDir: {app}
-Source: Images\file.ico; DestDir: {app}
+Source: Images\file.ico; DestDir: {app}\Images
+Source: Images\unsinstaller.ico; DestDir: {app}\Images
+Source: Images\installer.ico; DestDir: {app}\Images
 
 [Icons]
-Name: {group}\{#MyAppName}; Filename: {app}\pypulsar.exe; IconFilename: {app}\pulsar.ico; WorkingDir: {app}; Tasks: " quicklaunchicon desktopicon"; IconIndex: 0
-Name: {group}\{cm:UninstallProgram,{#MyAppName}}; Filename: {uninstallexe}
 Name: {userdesktop}\{#MyAppName}; Filename: {app}\pypulsar.exe; Tasks: desktopicon; IconFilename: {app}\pulsar.ico; WorkingDir: {app}
 Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}; Filename: {app}\pypulsar.exe; Tasks: quicklaunchicon; IconFilename: {app}\pulsar.ico; WorkingDir: {app}
-Name: {group}\{cm:UninstallProgram, {#MyAppName}}; Filename: {uninstallexe}
+Name: {group}\README-First; Filename: {app}\README-First.txt; WorkingDir: {app}; Comment: README-First; Flags: createonlyiffileexists
+Name: {group}\COPYING; Filename: {app}\COPYING.txt; WorkingDir: {app}; Comment: COPYING; Flags: createonlyiffileexists
+Name: {group}\{#MyAppName}; Filename: {app}\pypulsar.exe; IconFilename: {app}\pulsar.ico; WorkingDir: {app}; Tasks: " quicklaunchicon desktopicon"; IconIndex: 0
+Name: {group}\{cm:UninstallProgram,{#MyAppName}}; Filename: {uninstallexe}; IconFilename: {app}\Images\unsinstaller.ico; IconIndex: 0
+Name: {group}\pyPulsar Website; Filename: {app}\pypulsar website.url; Tasks: " quicklaunchicon desktopicon"
 
 [Run]
 Filename: {app}\{#MyAppExeName}; Description: {cm:LaunchProgram,{#MyAppName}}; Flags: nowait postinstall skipifsilent; Tasks: ; Languages: 
 
 [INI]
-Filename: {app}\pyPulsar Web Site.url; Section: InternetShortcut; Key: URL; String: http://www-lcs.ensicaen.fr/
+Filename: {app}\PyPulsar Website.url; Section: InternetShortcut; Key: URL; String: http://www-lcs.ensicaen.fr/article.php?id_article=152
+
 [UninstallDelete]
 Type: files; Name: {app}\pyPulsar Web Site.url
+Type: files; Name: {app}\PyPulsar Website.url
 [Registry]
 Root: HKCR; SubKey: .pul; ValueType: string; ValueData: Pulsar script; Flags: uninsdeletekey
 Root: HKCR; SubKey: Pulsar script; ValueType: string; ValueData: Script input file for PyPulsar; Flags: uninsdeletekey
 Root: HKCR; SubKey: Pulsar script\Shell\Open\Command; ValueType: string; ValueData: """{app}\pypulsar.exe"" ""%1"""; Flags: uninsdeletevalue
-Root: HKCR; Subkey: Pulsar script\DefaultIcon; ValueType: string; ValueData: {app}\file.ico,0; Flags: uninsdeletevalue
+Root: HKCR; Subkey: Pulsar script\DefaultIcon; ValueType: string; ValueData: {app}\images\file.ico,0; Flags: uninsdeletevalue uninsdeletekeyifempty

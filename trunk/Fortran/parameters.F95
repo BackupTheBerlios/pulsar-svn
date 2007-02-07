@@ -1,4 +1,4 @@
-!     Last change:  CF    3 Feb 2007    5:36 pm
+!     Last change:  CF    7 Feb 2007    5:20 pm
 !
 !$parameters.f95
 !
@@ -69,7 +69,7 @@ module parameters
   parameter (twopim6=0.000006283185307179586476925286766559d0)
 
 
-  CHARACTER (LEN=4096) :: message
+  CHARACTER (LEN=32768) :: message
   CHARACTER (LEN=255)  :: message_fmt
 
 

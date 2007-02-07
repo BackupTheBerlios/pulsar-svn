@@ -81,7 +81,7 @@ SATELLITE = Satellite = satellite = 2
 class Simulation:
 #==============================================================================
     """
-    A class to handle the parameters relative to a single pulsar simulation
+    A class to handle the parameters relative to a single pyPulsar simulation
     """
     
     current_spectrum = []
@@ -93,7 +93,7 @@ class Simulation:
     def __init__(self, protonfrequency = "400 MHz", verbose=False, debug=False):
     #----------------------------------------------------------------------------------------
         """
-        set default parameters for the simulation
+        Class constructor -additionally set default parameters for the simulation
         """
         DEBUG_MSG("Simulation INIT")
         #it is mandatory to reset f95pulsar when doing a new simulation
@@ -108,12 +108,13 @@ class Simulation:
         parameters.verbose=self.verbose
         parameters.debug=self.debug
 
+        #Reset most of the already allocated parameters
         self.reset_pulsar()
         self.reset_nucleus()
         self.reset_spectra()
             
         # initialise some basic parameters for the simulation
-        self.set_frequency(protonfrequency)            
+        self.set_protonfrequency(protonfrequency)            
         self.spinningspeed=0.
         self.spinningangle=MAS
         self.qfactor=0.001
@@ -169,6 +170,15 @@ class Simulation:
         parameters.delay = []
         parameters.coher = []               
 
+    #-----------------------    
+    def reset_nucleus(self):
+    #-----------------------
+        """
+        Deallocate the parameter arrays concerning the nuclei
+        """
+        DEBUG_MSG("RESET NUCLEUS")
+        parameters.nucleus=[]
+        
     #-------------------------------------------------------
     def execute_pulsar(self,TEST=False):
     #-------------------------------------------------------
@@ -197,7 +207,7 @@ class Simulation:
         # Display the current parameters if needed
         self.display()
         
-        #execute the simulation
+        #Execute the simulation
         if not TEST : compute(pydebug_msg,pywrite_string)
            
     #-----------------
@@ -268,15 +278,22 @@ class Simulation:
     #----------------------------------------
     def set_frequency(self, protonfrequency):
     #----------------------------------------
+        """ similar to set_protonfrequency
+            kept for backward compatibility """
+        self.set_protonfrequency(protonfrequency)
+        
+    #----------------------------------------
+    def set_protonfrequency(self, protonfrequency):
+    #----------------------------------------
         """
         Change the proton frequency
-        and calculate the corresponding spectrometer frequency   
+        and calculate the corresponding spectrometer field   
         """
-        DEBUG_MSG("SET_FREQUENCY")
+        DEBUG_MSG("SET_PROTONFREQUENCY")
         try:
             self.protonfrequency = abs(evaluate(protonfrequency))
         except:
-            WRITE_STRING("\n\terror in set_frequency: reset to default 400*mhz\n")
+            WRITE_STRING("\n\terror in set_proton_frequency: reset to default 400*mhz\n")
             self.protonfrequency = 400*mhz
         self.field = self.protonfrequency/gamma_H
         
@@ -291,7 +308,16 @@ class Simulation:
         if self.spinningspeed<1*hz and self.nsb > 0:
             WRITE_STRING("\n\tWARNING: the spinning speed being 0, nsb has also been set to 0\n")
             self.nsb = 0
- 
+
+    #------------------------------------------
+    def set_spinningangle(self, spinningangle):
+    #------------------------------------------
+        """
+        Change the spinning angle  
+        """
+        DEBUG_MSG("SET_SPINNINGANGLE")
+        self.spinningangle = abs(evaluate(spinningangle))
+        
     #----------------------    
     def set_nsb(self, nsb):
     #----------------------    
@@ -386,15 +412,6 @@ class Simulation:
             if spins<1 : self.nall = 0
         except:
             WRITE_STRING("\n\t!!! WARNING: 'set_detect' can be used only after a nucleus S has been defined\n")
-         
-    #------------------------------------------
-    def set_spinningangle(self, spinningangle):
-    #------------------------------------------
-        """
-        Change the spinning angle  
-        """
-        DEBUG_MSG("SET_SPINNINGANGLE")
-        self.spinningangle = abs(evaluate(spinningangle))
     
     #------------------------------
     def set_qfactor(self, qfactor):
@@ -518,14 +535,6 @@ class Simulation:
         if (verbose) :
             WRITE_STRING("\nSaving of spectra data done.")
 
-    #-----------------------    
-    def reset_nucleus(self):
-    #-----------------------
-        """
-        Deallocate the parameter arrays concerning the nuclei
-        """
-        DEBUG_MSG("RESET NUCLEUS")
-        parameters.nucleus=[]
 
     #-----------------------------------
     def add_nucleus(self, nucleus=None):
@@ -559,7 +568,7 @@ class Simulation:
     def select_nucleus(self,nucleus=None,index=None):
     #-----------------------------------------------------
         """
-        define the nucleus used for the calculation (use only its index)
+        define the observed nucleus used for the calculation (use only its index)
         arg:
             nucleus: String
             index: integer - index start at 0
@@ -624,6 +633,7 @@ class Simulation:
     #------------------------
     def set_idealpulse(self):
     #------------------------
+        """set pulse as ideal (dirac)"""
         DEBUG_MSG("SET_IDEAL")
         self.sequence.idealpulse()
         
@@ -1523,6 +1533,12 @@ def HelpMe():
     WRITE_STRING( set_probehead.__doc__)
     WRITE_STRING( init_simulation.__doc__)
 
+#----------------
+def Delete_Log():
+#----------------
+    """Delete the pyPulsar.log file"""
+    os.remove("pyPulsar.log")
+    
 
 
 

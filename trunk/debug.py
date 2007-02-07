@@ -67,6 +67,10 @@ def DEBUG_MSG(string):
 #------------------------------------------------------------------------------
 # Display a message if debug=.true.
     if DEBUG:
+        f = open("pyPulsar.log","a")
+        lines=string+"\n"
+        f.writelines(lines)
+        f.close()
         wx.LogMessage("Debug>  %s" % (string))
          
 #------------------------------------------------------------------------------
@@ -81,6 +85,10 @@ if DEBUG:
 #------------------------------------------------------------------------------
 def WRITE_STRING(string):
 #------------------------------------------------------------------------------
+    f = open("pyPulsar.log","a")
+    lines=string+"\n"
+    f.writelines(lines)
+    f.close()
     wx.LogMessage("%s " % string)
 
 #------------------------------------------------------------------------------

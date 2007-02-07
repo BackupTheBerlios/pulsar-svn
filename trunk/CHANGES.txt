@@ -1,21 +1,8 @@
-2007.02.03 (rev.29)
--------------------
-- FIXED: Handling of broadening of the individual spectra and sum of spectra
-- FIXED: change 'ppm' in 'PPM' in evaluate as the parameter 'st' is in upper case. 
-- FIXED: Handling of possible errors when opening a badly formatted *.spe file
-- Changed Make_lb to Set_lb function (this function become a properties of the class nucleus)
-- Added Set_concentration function (properties of the class nucleus)
+2007.02.06
+----------
+Changed set_frequency to set_proton_frequency
+Some comments cleanings
 
-2007.02.03 (rev.25)
--------------------
-- Added 'TwoNuclei.pul' demo file
-- Cleaning of the 'Simple.pul' demo file.
-- FIXED: Bug with the parameter Aliasing that was not properly initialised to False 
-- FIXED: when filename contains \t or \n : e.g., "Pulsar\trunk\Workspace" is interpreted as "Pulsar {TAB} runk\Workspace"). 
-
-2007.02.01 (rev.24)
--------------------
-Initial version for release candidate 0.1.RC1
-- Use MatplotLib and Scipy (Can be compiled using PyInstaller with some hacks - See the Built_pyPulsar_EXE.cmd)
-- To make this f2py working with LF95 5.6 on window, I had to modified the libc to libcmodified.lib (removing some conflicting objects using LM (library manager).
-
+2007.02.04
+----------
+First release Candidate 0.1.rc1

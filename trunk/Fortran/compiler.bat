@@ -39,8 +39,8 @@ cls
 	set Compiler=lahey
 
 :: Debug?
-
-	set debug=0
+        
+	set debug=[%1]
 	if %debug%==1	set debugoptions= --debug
 
 :: delete the existing file

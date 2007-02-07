@@ -1,4 +1,4 @@
-!     Last change:  CF    2 Feb 2007    9:36 am
+!     Last change:  CF    7 Feb 2007    5:38 pm
 !
 !$compute.f95
 !
@@ -97,8 +97,8 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
 ! Format strings
 !----------------
-  character*32 ::fmts="(10(g13.3,2x))"
-  character*32 ::fmts2="(10(I10,2x))"
+  character*32 ::fmt_rho="(11(g10.2,1x,g10.2,3x))"
+  character*32 ::fmts2="(11(I10,2x))"
 
 ! temporary strings
 !------------------
@@ -695,7 +695,7 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
   if (verbose.and.ns.GE.2) then
     do i=1,ns
-      WRITE(message,fmts) (ros(i,j),j=1,ns)
+      WRITE(message,fmt_rho) (ros(i,j),j=1,ns)
       call pywrite_string()
     end do
   end if
@@ -703,7 +703,7 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
 ! Return the density matrix of I
 !-------------------------------
-  if (verbose) then
+  if (verbose.and.ni.GE.2) then
     message = "return density matrix of I"
     call pywrite_string()
   end if
@@ -718,9 +718,9 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
     end do
     roi=roi*vls/vli/dble(ns)/fnexp
 
-    if (verbose.and.ns.GE.2) then
+    if (verbose.and.ni.GE.2) then
       do i=1,ni
-        WRITE(message,fmts) (roi(i,j),j=1,ni)
+        WRITE(message,fmt_rho) (roi(i,j),j=1,ni)
         call pywrite_string()
       end do
     end if
