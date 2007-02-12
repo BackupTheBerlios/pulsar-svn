@@ -510,7 +510,7 @@ class Simulation:
             
         lines.append("TYPE=SPE"+'\n')
         if len(self.collection_data)==np1:
-            print self.collection_label
+            DEBUG_MSG(self.collection_label)
             lines.append("YDATA "+self.collection_label+'\n')
             for id in range(np1):
                 line = string.strip(repr(self.collection_data[id]))+'\n'
@@ -554,12 +554,19 @@ class Simulation:
             os.remove("scratch.tmp")
         except:
             pass
-        f = open("scratch.tmp","wb")
-        f.writelines(lines)
-        f.close()
+        
+        try:
+            f = open("scratch.tmp","wb")
+            f.writelines(lines)
+            f.close()
+            return True
+        except:    
+            DEBUG_MSG("ERROR: When creating file scratch.tmp")
+            return False
+        
         if (verbose) :
             WRITE_STRING("\nSaving of spectra data done.")
-
+        
 
     #-----------------------------------
     def add_nucleus(self, nucleus=None):
@@ -604,7 +611,7 @@ class Simulation:
         try:
             essai=self.S_channel
         except:
-            print  self.sample.observed
+            DEBUG_MSG(self.sample.observed)
             self.S_channel=self.sample.observed
         
         if (nucleus is None) and (index is None):

@@ -67,4 +67,7 @@ for index in range (n):
     sim1.set_nsb(AUTO) 
     sim1.execute_pulsar()  
     sim1.store_spectrum()   
+
 sim1.sum_spectra()              # Sum spectra 
+sim1.write_spectra()            # write spectra
+

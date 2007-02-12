@@ -53,7 +53,7 @@ def pydebug_msg():
     string=rstrip(parameters.message.tostring())
     if parameters.debug:
         # wx.LogMessage("Debug>  %s" % (string))
-        print "Debug>  %s" % (string)
+        if DEBUG: print "Debug>  %s" % (string)
         
 #------------------------------------------------------------------------------
 def pywrite_string():
@@ -93,7 +93,7 @@ def WRITE_STRING(string):
     f.close()
     wx.LogMessage("%s " % string)
     #write also on the debug output
-    print "%s " % string
+    if DEBUG: print "%s " % string
     
 #------------------------------------------------------------------------------
 def write_string(string):

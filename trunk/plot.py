@@ -275,8 +275,12 @@ class PlotFigure(wx.Window):
         else:
             mode= string.lower(mode)
 
-        if mode == 'reset' :               
-            if not self.read_spectra(): return False
+        if mode == 'reset' :
+            try:
+                if not self.read_spectra(): return False
+            except:
+                return False
+                
             self.maxi=0
             for j in range(self.ni):
                 mxi=max(map(abs,self.spec[j]))

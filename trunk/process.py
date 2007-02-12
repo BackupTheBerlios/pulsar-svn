@@ -43,7 +43,7 @@ def runScript(name):
 
     [dirname,filename]=os.path.split(name)
     [scriptname,extension]=os.path.splitext(filename)
-    print "process RunScript: ",filename
+    DEBUG_MSG("process RunScript: "+filename)
     # Read file
     #-----------
     WRITE_STRING(' Reading script "'+scriptname+'"\n')              
@@ -80,11 +80,13 @@ def runScript(name):
     # Perform after run commands
     #---------------------------
     # text += "\nsim1.write_spectra(_script)\n"
-    text +="\nprint 'rename'\ntry:"
+    text +="\ntry:"
     text +="\n   os.rename('scratch.tmp',_script+'.spe')"
     text +="\nexcept:"
-    text +="\n   WRITE_STRING('ERROR: '+_script+'.spe cannot be written.')" 
-    text += "\nWRITE_STRING('SCRIPT PROCESS: End')\n"
+    text +="\n   WRITE_STRING('ERROR: '+_script+'.spe cannot be created.')" 
+    text +="\n   WRITE_STRING('   May be you forgot the instruction sim.write_spectra() at the end of your file')"
+    text +="\n   cancel=True"
+    text +="\nWRITE_STRING('SCRIPT PROCESS: End')\n"
     text = text.replace('\r', '\n')
     text = text.replace('\n\n', '\n')    
 

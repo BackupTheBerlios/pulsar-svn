@@ -599,21 +599,23 @@ class PulsarNotebookFrame(EditorNotebookFrame):
         nb=self.notebook.GetCurrentPage()
         nb.SetSelection(1)
         self.editor.log.ClearAll()
-
+        # Make this log active
+        wx.Log_SetActiveTarget(MyLog(self.editor.log, 0))
+        
         #Run the simulation
         #------------------
 	if self.buffer.simulationCompute():
 	    self.SetStatusText('Computing done!')
 	    nb.SetSelection(1)
-	    print self.SetStatusText
 
             #Show the resulting spectra
             #----------------------
-            if  self.editor.plot.plot_data(mode="reset") :
-                nb.SetSelection(2)
-                self.editor.plot.Show()
-                self.SetStatusText('Plotting done!')
-            else:
+	    try:
+                if  self.editor.plot.plot_data(mode="reset") :
+                    nb.SetSelection(2)
+                    self.editor.plot.Show()
+                    self.SetStatusText('Plotting done!')
+            except:
                 #plot_data returns False
                 wx.LogMessage("There was an error when trying of plotting the spectra")
 
@@ -759,7 +761,8 @@ class ViewLog:
     def AppendText(self,text):
         if DEBUG : print "Viewlog","AppendText"  
         self.window.AppendText(text)
-
+        self.window.SetInsertionPoint(self.window.GetLastPosition())
+        
     #-----------------
     def ClearAll(self):
         if DEBUG : print "Viewlog","ClearAll"  

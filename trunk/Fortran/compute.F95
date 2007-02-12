@@ -1,4 +1,4 @@
-!     Last change:  CF   12 Feb 2007    9:57 am
+!     Last change:  CF   12 Feb 2007    1:13 pm
 !
 !$compute.f95
 !
@@ -442,27 +442,27 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
          Call pydebug_msg()
          idealpulse=.true.
     else
-         Message=TAB // "RFLength="// num2str(rflength(nc),"(F10.3)")
+         Message=TAB // "RFLength="// num2str(rflength(nc),"(f15.3)")
          Call pydebug_msg()
     END if
     rfpowers(nc)=pulse(nc,3)
-    Message=TAB //"rfpower(S): "// num2str(rfpowers(nc),"(F10.3)")
+    Message=TAB //"rfpower(S): "// num2str(rfpowers(nc),"(f15.3)")
     Call pydebug_msg()
     rfoffsets(nc)=pulse(nc,4)
-    Message=TAB //"roffset(S): "// num2str(rfoffsets(nc),"(F10.3)")
+    Message=TAB //"roffset(S): "// num2str(rfoffsets(nc),"(f15.3)")
     Call pydebug_msg()
     rfphases(nc)=radians(pulse(nc,5))
-    Message=TAB //"rfphase(S): "// num2str(rfphases(nc),"(F10.3)")
+    Message=TAB //"rfphase(S): "// num2str(rfphases(nc),"(f15.3)")
     Call pydebug_msg()
 
     rfpoweri(nc)=pulse(nc,6)
-    Message=TAB //"rfpower(I): "// num2str(rfpoweri(nc),"(F10.3)")
+    Message=TAB //"rfpower(I): "// num2str(rfpoweri(nc),"(f15.3)")
     Call pydebug_msg()
     rfoffseti(nc)=pulse(nc,7)
-    Message=TAB //"rfoffset(I): "// num2str(rfoffseti(nc),"(F10.3)")
+    Message=TAB //"rfoffset(I): "// num2str(rfoffseti(nc),"(f15.3)")
     Call pydebug_msg()
     rfphasei(nc)=radians(pulse(nc,8))
-    Message=TAB //"rfphase(I): "// num2str(rfphasei(nc),"(F10.3)")
+    Message=TAB //"rfphase(I): "// num2str(rfphasei(nc),"(f15.3)")
     Call pydebug_msg()
 
 ! calculate the increment dtp for pulse effect integration
@@ -484,25 +484,25 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
     end if
     Message=TAB //"ntp: "// num2str(ntp(nc),"(I10)")
     Call pydebug_msg()
-    Message=TAB //"deltatp: "// num2str(deltatp(nc),"(F10.3)")
+    Message=TAB //"deltatp: "// num2str(deltatp(nc),"(f15.3)")
     Call pydebug_msg()
     Message=TAB //"ntpadd: "// num2str(ntpadd(nc),"(I10)")
     Call pydebug_msg()
-    Message=TAB //"deltatpadd: "// num2str(deltatpadd(nc),"(F10.3)")
+    Message=TAB //"deltatpadd: "// num2str(deltatpadd(nc),"(f15.3)")
     Call pydebug_msg()
 
     rfdelay(nc)=delay(nc,2)
-    Message=TAB //"rfdelay "// num2str(rfdelay(nc),"(F10.3)")
+    Message=TAB //"rfdelay "// num2str(rfdelay(nc),"(f15.3)")
     Call pydebug_msg()
 
     t2ss(nc)=exp(-(rflength(nc)+rfdelay(nc))/t2s)
-    Message=TAB //"t2ss: "// num2str(t2ss(nc),"(F10.3)")
+    Message=TAB //"t2ss: "// num2str(t2ss(nc),"(f15.3)")
     Call pydebug_msg()
     t2ii(nc)=exp(-(rflength(nc)+rfdelay(nc))/t2i)
-    Message=TAB //"t2ii: "// num2str(t2ii(nc),"(F10.3)")
+    Message=TAB //"t2ii: "// num2str(t2ii(nc),"(f15.3)")
     Call pydebug_msg()
     t2si(nc)=(t2ss(nc)+t2ii(nc))/2.0d0
-    Message=TAB //"t2si: "// num2str(t2si(nc),"(F10.3)")
+    Message=TAB //"t2si: "// num2str(t2si(nc),"(f15.3)")
     Call pydebug_msg()
 
 ! decoupling
@@ -673,22 +673,22 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
   !****
 
-    message="temp rho:S density matrix"
-    call pywrite_string()
-    write (str,"(I3)") ns
-    fmts="("//TRIM(adjustl(str))// "(f10.4,1x))"
-    message="...real part..."
-    call pywrite_string()
-    do j=1,ns
-      write(message, fmts)  (REAL(ros(j,i)),i=1,ns)
-      call pywrite_string()
-    end do
-    message="...imag part..."
-    call pywrite_string()
-      do j=1,ns
-      write(message, fmts)  (AIMAG(ros(j,i)),i=1,ns)
-      call pywrite_string()
-    end do
+  !  message="temp rho:S density matrix"
+  !  call pywrite_string()
+  !  write (str,"(I3)") ns
+  !  fmts="("//TRIM(adjustl(str))// "(f15.3,1x))"
+  !  message="...real part..."
+  !  call pywrite_string()
+  !  do j=1,ns
+  !    write(message, fmts)  (REAL(ros(j,i)),i=1,ns)
+  !    call pywrite_string()
+  !  end do
+  !  message="...imag part..."
+  !  call pywrite_string()
+  !    do j=1,ns
+  !    write(message, fmts)  (AIMAG(ros(j,i)),i=1,ns)
+  !    call pywrite_string()
+  !  end do
 
 
   !****
@@ -743,7 +743,7 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
     message="rho:S density matrix"
     call pywrite_string()
     write (str,"(I3)") ns
-    fmts="("//TRIM(adjustl(str))// "(f10.4,1x))"
+    fmts="("//TRIM(adjustl(str))// "(f15.3,1x))"
     message="...real part..."
     call pywrite_string()
     do j=1,ns
@@ -777,7 +777,7 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
       message="rho:I density matrix"
       call pywrite_string()
       write (str,"(I3)") ns
-      fmts="("//TRIM(adjustl(str))// "(f10.4,1x))"
+      fmts="("//TRIM(adjustl(str))// "(f15.3,1x))"
       message="...real part..."
       call pywrite_string()
       do j=1,ns

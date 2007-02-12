@@ -35,7 +35,7 @@ set version=0.1.0
 :: debug=0  (debug false)
 :: debug =1 (debug true)
 
-set debug=0
+set debug=%1
 
 :: CHANGE THESE LINES ACCORDING TO THE INSTALLATION DIRECTORIES
 ::-------------------------------------------------------------
