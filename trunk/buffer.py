@@ -33,7 +33,7 @@ import document as document
 import process
 from f95pulsar import reset
 
-DEBUG=True
+DEBUG=False
 MOREDEBUG=False
 
 class Buffer:

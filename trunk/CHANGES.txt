@@ -1,11 +1,19 @@
+2007.02.12
+----------
+svn.33
+Bug #10296 - fixed
+Bug #10298 - fixed
++ many additions to solve problems when chaining chaining the simulation 
+
 2007.02.08
 ----------
 Modified About Dialog
 Added DEBUG informations
-FIXED: Bug #.....Error in the menu File/New.
+FIXED: Error in the menu File/New.
 
 2007.02.07
 ----------
+svn.32
 FIXED: Bug #10269(crash when simulating several times the same spectra)
 
 2007.02.06

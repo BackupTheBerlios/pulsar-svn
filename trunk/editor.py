@@ -46,7 +46,7 @@ import dispatcher as dispatcher
 from buffer import Buffer
 from plot import *
 
-DEBUG = True
+DEBUG = False
 MOREDEBUG = False
 SERIOUSDEBUG = False
 PULSARPATH,PULSARNAME=os.path.split(sys.argv[0])

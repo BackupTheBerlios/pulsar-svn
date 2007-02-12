@@ -30,7 +30,7 @@
 
 @echo off
 
-set version=0.1.rc1
+set version=0.1.0
 
 :: debug=0  (debug false)
 :: debug =1 (debug true)

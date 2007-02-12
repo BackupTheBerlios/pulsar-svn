@@ -47,7 +47,7 @@ from debug import *
 false=No=no=FALSE=False
 true=Yes=yes=TRUE=True
 
-DEBUG=True
+DEBUG=False
 
 #============================================================================
 class PlotFigure(wx.Window):

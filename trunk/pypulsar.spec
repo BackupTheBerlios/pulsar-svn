@@ -1,4 +1,4 @@
-__version__='0.1.rc1'
+__version__='0.1.0'
 installpath='D:\\program_files\\Pulsar\\trunk\\'
 imgpath=installpath+'images\\'
 
@@ -17,7 +17,7 @@ exe = EXE(pyz,
           debug=False,
           strip=False,
           upx=False,
-          console=True , icon=imgpath+'pulsar.ico')
+          console=False , icon=imgpath+'pulsar.ico')
 
 coll = COLLECT( exe,
                a.binaries,
