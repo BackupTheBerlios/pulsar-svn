@@ -27,11 +27,7 @@
 
 # start a new simulation
 #-----------------------
-#import gc
-#gc.set_debug(gc.DEBUG_LEAK)
-sim1=None
-reset()
-sim1=Simulation(verbose=True,debug=True)
+sim1=Simulation(verbose=True)
 
 # Set observation channel
 #------------------------

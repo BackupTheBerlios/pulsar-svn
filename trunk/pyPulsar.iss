@@ -2,8 +2,8 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "pyPulsar"
-#define MyAppVerName "pyPulsar-0.1.rc1"
-#define MyAppURL "http://www-lcs.ensicaen.fr/article.php?id_article=152"
+#define MyAppVerName "pyPulsar-0.1"
+#define MyAppURL "http://www-lcs.ensicaen.fr/pyPulsar"
 #define MyAppExeName "pyPulsar.exe"
 
 [Setup]
@@ -15,9 +15,9 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={pf}\{#MyAppVerName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=true
-LicenseFile=D:\program_files\Pulsar\trunk\COPYING.txt
-InfoBeforeFile=D:\program_files\Pulsar\trunk\README-First.txt
-InfoAfterFile=D:\program_files\Pulsar\trunk\NEWS.txt
+LicenseFile=D:\program_files\Pulsar\trunk\COPYING.rtf
+InfoBeforeFile=D:\program_files\Pulsar\trunk\README.rtf
+InfoAfterFile=D:\program_files\Pulsar\trunk\NEWS.rtf
 OutputBaseFilename=setup-{#MyAppVerName}
 Compression=lzma
 SolidCompression=true
@@ -26,11 +26,11 @@ LanguageDetectionMethod=locale
 WindowVisible=true
 BackColor=clSilver
 SetupIconFile=D:\program_files\Pulsar\trunk\Images\pulsar.ico
-ChangesAssociations=yes
+ChangesAssociations=true
 WizardImageFile=D:\program_files\Pulsar\trunk\Images\installer.bmp
 WizardSmallImageFile=D:\program_files\Pulsar\trunk\Images\installer-small.bmp
 WizardImageStretch=true
-VersionInfoVersion=0.1.1
+VersionInfoVersion=0.1.0
 VersionInfoCopyright=2006-2007 C. Fernandez & J.P. Amoureux
 AppCopyright=2006-2007 C. Fernandez & J.P. Amoureux
 
@@ -47,22 +47,22 @@ Source: {#MyAppVerName}\pypulsar.exe; DestDir: {app}; Flags: ignoreversion; Task
 Source: {#MyAppVerName}\*; DestDir: {app}; Flags: ignoreversion recursesubdirs createallsubdirs promptifolder
 Source: Workspace\*.pul; DestDir: {app}\Workspace; Flags: ignoreversion recursesubdirs createallsubdirs promptifolder uninsneveruninstall
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
-Source: README-First.txt; DestDir: {app}; Flags: isreadme
-Source: TODO.txt; DestDir: {app}
-Source: AUTHORS.txt; DestDir: {app}
-Source: COPYING.txt; DestDir: {app}
-Source: INSTALL.txt; DestDir: {app}
-Source: NEWS.txt; DestDir: {app}
-Source: CHANGES.txt; DestDir: {app}
+Source: README.rtf; DestDir: {app}; Flags: isreadme
+Source: COPYING.rtf; DestDir: {app}
+Source: INSTALL.rtf; DestDir: {app}
+Source: NEWS.rtf; DestDir: {app}
+Source: CHANGES.rtf; DestDir: {app}
 Source: Images\pulsar.ico; DestDir: {app}
 Source: Images\file.ico; DestDir: {app}\Images
 Source: Images\unsinstaller.ico; DestDir: {app}\Images
 Source: Images\installer.ico; DestDir: {app}\Images
+Source: README.html; DestDir: {app}
+Source: AUTHORS.rtf; DestDir: {app}
 
 [Icons]
 Name: {userdesktop}\{#MyAppName}; Filename: {app}\pypulsar.exe; Tasks: desktopicon; IconFilename: {app}\pulsar.ico; WorkingDir: {app}
 Name: {userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}; Filename: {app}\pypulsar.exe; Tasks: quicklaunchicon; IconFilename: {app}\pulsar.ico; WorkingDir: {app}
-Name: {group}\README-First; Filename: {app}\README-First.txt; WorkingDir: {app}; Comment: README-First; Flags: createonlyiffileexists
+Name: {group}\README; Filename: {app}\README.rtf; WorkingDir: {app}; Comment: README; Flags: createonlyiffileexists
 Name: {group}\COPYING; Filename: {app}\COPYING.txt; WorkingDir: {app}; Comment: COPYING; Flags: createonlyiffileexists
 Name: {group}\{#MyAppName}; Filename: {app}\pypulsar.exe; IconFilename: {app}\pulsar.ico; WorkingDir: {app}; Tasks: " quicklaunchicon desktopicon"; IconIndex: 0
 Name: {group}\{cm:UninstallProgram,{#MyAppName}}; Filename: {uninstallexe}; IconFilename: {app}\Images\unsinstaller.ico; IconIndex: 0
@@ -72,7 +72,7 @@ Name: {group}\pyPulsar Website; Filename: {app}\pypulsar website.url; Tasks: " q
 Filename: {app}\{#MyAppExeName}; Description: {cm:LaunchProgram,{#MyAppName}}; Flags: nowait postinstall skipifsilent; Tasks: ; Languages: 
 
 [INI]
-Filename: {app}\PyPulsar Website.url; Section: InternetShortcut; Key: URL; String: http://www-lcs.ensicaen.fr/article.php?id_article=152
+Filename: {app}\PyPulsar Website.url; Section: InternetShortcut; Key: URL; String: http://www-lcs.ensicaen.fr/pyPulsar
 
 [UninstallDelete]
 Type: files; Name: {app}\pyPulsar Web Site.url
@@ -82,3 +82,9 @@ Root: HKCR; SubKey: .pul; ValueType: string; ValueData: Pulsar script; Flags: un
 Root: HKCR; SubKey: Pulsar script; ValueType: string; ValueData: Script input file for PyPulsar; Flags: uninsdeletekey
 Root: HKCR; SubKey: Pulsar script\Shell\Open\Command; ValueType: string; ValueData: """{app}\pypulsar.exe"" ""%1"""; Flags: uninsdeletevalue
 Root: HKCR; Subkey: Pulsar script\DefaultIcon; ValueType: string; ValueData: {app}\images\file.ico,0; Flags: uninsdeletevalue uninsdeletekeyifempty
+[_ISTool]
+UseAbsolutePaths=false
+[Messages]
+SetupAppTitle=pyPulsar :  a simulation program for solid-state NMR
+WizardInfoAfter=Information / News
+ButtonInstall=&Install pyPulsar

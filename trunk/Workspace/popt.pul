@@ -34,7 +34,7 @@
 # start a new simulation
 #-----------------------
 observed="23Na"
-sim1=Simulation(verbose=true,debug=true)
+sim1=Simulation(verbose=true)
                                  # This open a new simulation instance with 
                                  # the default proton frequency set to 400 Mhz
                                  # (but we can also pass another proton frequency  
@@ -60,7 +60,7 @@ sim1.set_spinningangle(MAS)     # default MAS
 sim1.set_qfactor(100)           # Probe quality factor (default 0.001)
 sim1.set_npts("1 K")            # default 4096 or 4*K
 sim1.set_sw("20 kHz")           # default 10000.
-sim1.set_accuracy(10)            # default 8       
+sim1.set_accuracy(8)            # default 8       
 sim1.set_rfstep(5)              # default 5
 
 ## required statement
@@ -73,11 +73,11 @@ sim1.set_detect(ALL)            # default ALL (other values: CENTRAL, SATELLITE)
 # Run simulation (variation of the pulse length
 #----------------------------------------------
 sim1.reset_spectra()            # reset the current spectrum buffer
-for p1 in arange(.1,1,1):# (start,end,step)
-    sim1.reset_pulse()          # reset the pulse sequence
+p1_list= arange(.5,6,.25)       # (start,end,step)
+for p1 in p1_list:              # start a loop on p1
+    sim1.reset_pulse()          # reset the pulse sequence (required!)
     #Pulse sequence (one pulse): length is the pulse length, here variable
     sim1.set_pulse(p1,powerS="100 kHz",offsetS=0,phaseS=0)
-    #sim1.set_idealpulse()
     # start execution of this simulation
     sim1.execute_pulsar()       
     sim1.store_spectrum(data=p1,label="pulse length")     
@@ -86,4 +86,3 @@ for p1 in arange(.1,1,1):# (start,end,step)
 
 #Write spectra
 sim1.write_spectra()
-show_operators(pydebug_msg)

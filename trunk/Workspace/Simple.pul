@@ -23,7 +23,7 @@
 #------------------------------------------------------------------------------
 # Purpose:
 #   A very simple quadrupolar spectra simulation
-#------------------------------------------------------------------------------
+#---------------------------------------------------------------------
 
 # start a new simulation
 #-----------------------
@@ -56,3 +56,4 @@ sim1.select_nucleus()
 sim1.set_nsb(AUTO) 
 sim1.execute_pulsar()                  
 sim1.store_spectrum()   
+sim1.write_spectra()

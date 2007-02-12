@@ -1,4 +1,0 @@
-2007.02.02
-----------
-version 0.1. rc1 (SVN rev.19)
-- first release candidate 
