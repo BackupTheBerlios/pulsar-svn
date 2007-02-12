@@ -1,4 +1,4 @@
-!     Last change:  CF    1 Feb 2007   10:16 pm
+!     Last change:  CF   12 Feb 2007    9:37 am
 !
 !$diagonalize.f95
 !
@@ -99,6 +99,9 @@ module diagonalize
       real*8 eps
       parameter(eps=1.0d-30)
 
+      integer*8 :: i,j,ii,l,k,jp1
+      REAL*8    :: h,g,scal,f,si,gi,hh,fi
+
       tau(1,n)=1.
       tau(2,n)=0.
       do 100 i=1,n
@@ -179,6 +182,9 @@ module diagonalize
       real*8    :: e(n)
       real*8    :: z(n,n)
 
+      integer*8 :: i,j,l,m, l1, mml, ii, k
+      real*8    :: zachep,f,b,h,g,r,c,s,p
+
       zachep=2.**(-26)
       do 100 i=2,n
     100  e(i-1)=e(i)
@@ -192,7 +198,7 @@ module diagonalize
         do 110 m=l,n
     110     if(abs(e(m)).le.b) goto 120
     120     if(m.eq.l) goto 220
-    130     if(j.eq.30) print *, "ca ne vas plus!!!! "
+    130     if(j.eq.30) print *, "There is a big problem in 'htridi'"
             j=j+1
             l1=l+1
             g=vp(l)
@@ -266,6 +272,9 @@ module diagonalize
       real*8    :: zi(n,n)
       real*8 eps
       parameter(eps=1.0d-30)
+
+      integer*8 :: k,i,j,l
+      real*8    :: h,s,si
 
       do 50 k=1,n
           do 50 j=1,n

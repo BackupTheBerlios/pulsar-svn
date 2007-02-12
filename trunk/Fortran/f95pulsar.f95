@@ -1,4 +1,4 @@
-!     Last change:  CF    1 Feb 2007   10:03 pm
+!     Last change:  CF   11 Feb 2007   10:29 pm
 !
 !$f95pulsar.f95
 !
@@ -30,7 +30,6 @@
 !
 
 include "parameters.f95"
-include "modules.f95"
 include "subroutines.f95"
 include "diagonalize.f95"
 include "fourier.f95"

@@ -1,4 +1,4 @@
-!     Last change:  CF    1 Feb 2007    9:59 pm
+!     Last change:  CF   12 Feb 2007    2:01 am
 !
 !$subroutines.f95
 !
@@ -57,18 +57,17 @@ logical*2 function isnull(angle)
 end function isnull
 
 
-subroutine wigner(angle,d)
+subroutine wigner(angle,dw)
 !-------------------------------------------!
 ! computation of the wigner matrix elements !
 !-------------------------------------------!
 
   real*8, intent(in)  :: angle
-  real*8, intent(out) :: d(-4:4,-4:4)
+  real*8, intent(IN out) :: dw(-4:4,-4:4)
 
                                                  ! local variable
   real*8    :: c
   real*8    :: s
-  INTEGER*8 :: i,j
 
   real*8    :: sq38
   parameter ( sq38=0.61237243569579452d0 )
@@ -79,33 +78,33 @@ subroutine wigner(angle,d)
   c=dcos(radians(angle))
   s=dsin(radians(angle))
 
-  d=0.0d0
+  dw=0.0d0
 
-  d(-2,-2)=((1.0d0+c)**2)/4.0d0
-  d(2,2)=d(-2,-2)
-  d(2,1)=-(1.0d0+c)*s/2.0d0
-  d(-2,-1)=-d(2,1)
-  d(1,2)=-d(2,1)
-  d(-1,-2)=d(2,1)
-  d(2,0)=sq38*s*s
-  d(0,2)=d(2,0)
-  d(-2,0)=d(2,0)
-  d(0,-2)=d(2,0)
-  d(2,-1)=-(1.0d0-c)*s/2.0d0
-  d(-1,2)=-d(2,-1)
-  d(-2,1)=-d(2,-1)
-  d(1,-2)=d(2,-1)
-  d(2,-2)=((1.0d0-c)**2)/4.0d0
-  d(-2,2)=d(2,-2)
-  d(1,1)=c*c-(1.0d0-c)/2.0d0
-  d(-1,-1)=d(1,1)
-  d(1,-1)=(1.0d0+c)/2.0d0-c*c
-  d(-1,1)=d(1,-1)
-  d(1,0)=-sq38*2.0d0*c*s
-  d(0,1)=-d(1,0)
-  d(-1,0)=-d(1,0)
-  d(0,-1)=d(1,0)
-  d(0,0)=(3.0d0*c*c-1.0d0)/2.0d0
+  dw(-2,-2)=((1.0d0+c)**2)/4.0d0
+  dw(2,2)=dw(-2,-2)
+  dw(2,1)=-(1.0d0+c)*s/2.0d0
+  dw(-2,-1)=-dw(2,1)
+  dw(1,2)=-dw(2,1)
+  dw(-1,-2)=dw(2,1)
+  dw(2,0)=sq38*s*s
+  dw(0,2)=dw(2,0)
+  dw(-2,0)=dw(2,0)
+  dw(0,-2)=dw(2,0)
+  dw(2,-1)=-(1.0d0-c)*s/2.0d0
+  dw(-1,2)=-dw(2,-1)
+  dw(-2,1)=-dw(2,-1)
+  dw(1,-2)=dw(2,-1)
+  dw(2,-2)=((1.0d0-c)**2)/4.0d0
+  dw(-2,2)=dw(2,-2)
+  dw(1,1)=c*c-(1.0d0-c)/2.0d0
+  dw(-1,-1)=dw(1,1)
+  dw(1,-1)=(1.0d0+c)/2.0d0-c*c
+  dw(-1,1)=dw(1,-1)
+  dw(1,0)=-sq38*2.0d0*c*s
+  dw(0,1)=-dw(1,0)
+  dw(-1,0)=-dw(1,0)
+  dw(0,-1)=dw(1,0)
+  dw(0,0)=(3.0d0*c*c-1.0d0)/2.0d0
 
 end subroutine wigner
 
@@ -127,7 +126,7 @@ subroutine orientate(euler,eta,r2m)
   real*8, intent(in)  :: eta
   complex*8, intent(out) :: r2m(0:2)
                                                  ! local
-  real*8 :: d(-4:4,-4:4)
+  real*8 :: dw(-4:4,-4:4)
   real*8 :: alpha, beta, gamma
   real*8 :: v2
   integer*2 :: m
@@ -144,18 +143,18 @@ subroutine orientate(euler,eta,r2m)
 
   v2=-eta/3.0d0                                  ! todo: why -eta/3 and not +eta
 
-  call wigner(beta,d)
+  call wigner(beta,dw)
 
   do m=1,2
     dm=dble(m)
-    r2m(m)=cmplx(v0*d(0,m)*dcos(dm*gamma)+ &
-           v2*(d(2,m)*dcos(dm*gamma+2.0d0*alpha)+d(-2,m)*dcos(dm*gamma-2.0d0*alpha)), &
-                 v0*d(0,m)*dsin(dm*gamma)+ &
-           v2*(d(2,m)*dsin(dm*gamma+2.0d0*alpha)+d(-2,m)*dsin(dm*gamma-2.0d0*alpha)))
+    r2m(m)=cmplx(v0*dw(0,m)*dcos(dm*gamma)+ &
+           v2*(dw(2,m)*dcos(dm*gamma+2.0d0*alpha)+dw(-2,m)*dcos(dm*gamma-2.0d0*alpha)), &
+                 v0*dw(0,m)*dsin(dm*gamma)+ &
+           v2*(dw(2,m)*dsin(dm*gamma+2.0d0*alpha)+dw(-2,m)*dsin(dm*gamma-2.0d0*alpha)))
 
   end do
 
-  r2m(0)=cmplx(v0*d(0,0)+2.0d0*v2*d(2,0)*dcos(2.0d0*alpha))
+  r2m(0)=cmplx(v0*dw(0,0)+2.0d0*v2*dw(2,0)*dcos(2.0d0*alpha))
 
 end subroutine orientate
 
@@ -164,7 +163,7 @@ function num2str_i4n(i4n,fmat)
   implicit none
   integer*4, INTENT(IN) :: i4n
   character(len=*), INTENT(IN) ::  fmat
-  character(len=32) ::  num2str_i4N, str
+  character(len=32) ::  num2str_i4N
   INTEGER*4, iochk
   num2str_i4n=''
   write(num2str_i4n,fmt=fmat,iostat=iochk) i4n
@@ -222,5 +221,3 @@ function num2str_r8n(r8n,fmat)
   return
 END function num2str_r8n
 !
-
-

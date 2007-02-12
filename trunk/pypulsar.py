@@ -30,14 +30,15 @@ __contributors__ =""
 from main import *
 import sys
 import pytz.zoneinfo.UTC  # NEEDED BY PYINSTALLER (I don't know why?)
-
+##import gc
+##gc.set_debug(gc.DEBUG_LEAK)
 #---------------------------------------------------------------------------   
 if __name__ == "__main__":
-    import psyco
-    try:
-        psyco.full()
-        print "psyco started."
-    except ImportError:
-        print "psyco error."
-        pass
+##    import psyco
+##    try:
+##        psyco.full()
+##        print "psyco started."
+##    except ImportError:
+##        print "psyco error."
+##        pass
     main(sys.argv)

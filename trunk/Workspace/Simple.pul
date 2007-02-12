@@ -31,7 +31,7 @@ sim1=Simulation(verbose=true)
 
 # Set observation channel
 #------------------------
-sim1.set_channel("23Na")
+#sim1.set_channel("23Na")
 
 # Nucleus definition 
 #-------------------- 

@@ -31,17 +31,19 @@ import os
 import sys
 import document as document
 import process
+from f95pulsar import reset
 
-DEBUG=False
+DEBUG=True
+MOREDEBUG=False
 
 class Buffer:
     """Buffer class."""
-
     id = 0
 
     def __init__(self, filename=None):
         """Create a Buffer instance."""
         Buffer.id += 1
+        if DEBUG : print "Buffer",Buffer.id
         self.id = Buffer.id
         self.name = ''
         self.editors = {}
@@ -62,11 +64,13 @@ class Buffer:
 
     def addEditor(self, editor):
         """Add an editor."""
+        if DEBUG : print "Buffer", "addEditor"
         self.editor = editor
         self.editors[editor.id] = editor
 
     def hasChanged(self):
         """Return True if text in editor has changed since last save."""
+        if MOREDEBUG : print "Buffer", "hasChanged","###"
         if self.editor:
             return self.editor.hasChanged()
         else:
@@ -74,6 +78,7 @@ class Buffer:
 
     def new(self, filepath):
         """New empty buffer."""
+        if DEBUG : print "Buffer", "new"
         if not filepath:
             return
         if os.path.exists(filepath):
@@ -83,6 +88,7 @@ class Buffer:
 
     def open(self, filename):
         """Open file into buffer."""
+        if DEBUG : print "Buffer", "open"
         self.doc = document.Document(filename)
         self.name = self.doc.filename or ('Untitled:' + str(self.id))
         if self.doc.filedir and self.doc.filedir not in self.syspath:
@@ -93,15 +99,16 @@ class Buffer:
         if self.editor:
             text = self.doc.read()
             self.editor._setBuffer(buffer=self, text=text)
-        if DEBUG: print "buffer.py filename: ",
-        if DEBUG: print filename
+        if DEBUG: print "filename: ",filename
         
     def overwriteConfirm(filepath):
         """Confirm overwriting an existing file."""
+        if DEBUG : print "Buffer", "overwriteconfirm"
         return False
 
     def save(self):
         """Save buffer."""
+        if DEBUG : print "Buffer", "save"
         filepath = self.doc.filepath
         if not filepath:
             return  # XXX Get filename
@@ -116,6 +123,7 @@ class Buffer:
 
     def saveAs(self, filename):
         """Save buffer."""
+        if DEBUG : print "Buffer", "saveAs"        
         self.doc = document.Document(filename)
         self.name = self.doc.filename
         self.save()
@@ -123,7 +131,7 @@ class Buffer:
     def simulationCompute(self):
         """Run Simulation.
         Return True if updated, False if there was an error."""
-     
+        if DEBUG : print "Buffer", "SimulationCompute"     
         syspath = sys.path
         sys.path = self.syspath
         text = self.editor.getText()

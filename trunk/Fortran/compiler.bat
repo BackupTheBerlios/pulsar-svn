@@ -1,4 +1,5 @@
-@echo off
+@echo on
+
 ::$compiler.bat
 
 ::PULSAR Project:
@@ -32,7 +33,9 @@
 :: ****************************************************
 
 cls
-
+:: check if we are in the pulsar directory
+if exist pypulsar.py    cd fortran
+ 
 :: Compiler= lahey  - use lahey lf95 compiler
 :: Compiler= g95    - use gnu g95 compiler
 
@@ -40,8 +43,13 @@ cls
 
 :: Debug?
         
-	set debug=[%1]
-	if %debug%==1	set debugoptions= --debug
+	set debug=%1
+
+        set debugoptions=--verbose 
+	if %debug%==1 set debugoptions=--verbose --debug
+        if %debug%==2 set debugoptions=--verbose --debug-capi --debug
+
+echo %debugoptions%
 
 :: delete the existing file
 
@@ -52,7 +60,7 @@ cls
 
 :: compile
 
-	f2py.py --verbose --fcompiler=%Compiler% %debugoptions% -m f95pulsar -c f95pulsar.f95
+	f2py.py --fcompiler=%Compiler% %debugoptions% -m f95pulsar -c f95pulsar.f95
 
 :: test result
  

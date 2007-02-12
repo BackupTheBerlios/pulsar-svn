@@ -1,4 +1,4 @@
-!     Last change:  CF    2 Feb 2007    9:37 am
+!     Last change:  CF   12 Feb 2007    2:04 am
 !
 !$ll.f95
 !
@@ -75,7 +75,7 @@ subroutine ll(xx,yy,zz,ii,jj,r3)
   real*8    :: ddm
   real*8    :: gam
   real*8    :: arg
-  integer*8 :: nphi
+  !integer*8 :: nphi
   real*8    :: tat
   real*8    :: tp
   real*8    :: dtpp
@@ -104,7 +104,7 @@ subroutine ll(xx,yy,zz,ii,jj,r3)
   real*8    :: svp
   integer*8 :: indi
   integer*8 :: indj
-  real*8    :: divise
+  !real*8    :: divise
   real*8    :: gt
   real*8    :: arg2
   complex*8    :: args
@@ -128,14 +128,14 @@ subroutine ll(xx,yy,zz,ii,jj,r3)
 
                                                  ! calculation of the am
                                                  !-----------------------
-  ats=0.0d0
-  aqi=0.0d0
-  aci=0.0d0
-  aqs=0.0d0
-  acs=0.0d0
-  ads=0.0d0
-  p=0.0d0
-  q=0.0d0
+  ats=CMPLX(0.0d0,0.0D0)
+  aqi=CMPLX(0.0d0,0.0D0)
+  aci=CMPLX(0.0d0,0.0D0)
+  aqs=CMPLX(0.0d0,0.0D0)
+  acs=CMPLX(0.0d0,0.0D0)
+  ads=CMPLX(0.0d0,0.0D0)
+  p=CMPLX(0.0d0,0.0D0)
+  q=CMPLX(0.0d0,0.0D0)
 
   if(abs(coefps).gt.eps) call am(etaqs,aqs)
 
@@ -189,13 +189,13 @@ subroutine ll(xx,yy,zz,ii,jj,r3)
     end if
   end if
 
-  aqss=0.0d0
-  acspi=0.0D0
-  aqsi=0.0d0
-  aqpi=0.0D0
-  aqps=0.0D0
-  adcps=0.0D0
-  adipolis=0.0D0
+  aqss=CMPLX(0.0d0,0.0D0)
+  acspi=CMPLX(0.0d0,0.0D0)
+  aqsi=CMPLX(0.0d0,0.0D0)
+  aqpi=CMPLX(0.0d0,0.0D0)
+  aqps=CMPLX(0.0d0,0.0D0)
+  adcps=CMPLX(0.0d0,0.0D0)
+  adipolis=CMPLX(0.0d0,0.0D0)
 
   do l=0,4
     if (staticsample.and.(l.ne.0)) cycle
@@ -216,7 +216,7 @@ subroutine ll(xx,yy,zz,ii,jj,r3)
                                                  ! wr(ii,jj,k) and p(k,nsbs) are independant of gamma and of the phase cycling
                                                  ! so they are calculated once only for each crystal orientations.
 
-  a=0.0d0
+  a=CMPLX(0.0d0,0.0D0)
   do k=1,ns-1
     ddm=3.0d0*(2.0d0*dble(k)-2.0d0*spins-1.0d0)*coefps
     wr(ii,jj,k)=isost+real(u1s(k)*aqss(1,0)+u2s(k)*aqss(2,0)+adcps(0)-ddm*aqps(0))

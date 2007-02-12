@@ -43,10 +43,10 @@ def runScript(name):
 
     [dirname,filename]=os.path.split(name)
     [scriptname,extension]=os.path.splitext(filename)
-
+    print "process RunScript: ",filename
     # Read file
     #-----------
-    DEBUG_MSG(' Reading script "'+scriptname+'"\n')              
+    WRITE_STRING(' Reading script "'+scriptname+'"\n')              
     try:
         f=open(name,"r")
         text = f.read()
@@ -59,7 +59,7 @@ def runScript(name):
     spectrumpath=dirname+"/"+scriptname+".spe"
     if os.path.exists(spectrumpath):
         os.remove(spectrumpath)
-        DEBUG_MSG("Old spectrum file: "+spectrumpath+" has been removed")
+        WRITE_STRING("Old spectrum file: "+spectrumpath+" has been removed")
     
     # Define some default variables
     #------------------------------
@@ -71,7 +71,7 @@ def runScript(name):
 
     header  = '_script="' + string.join(dirname.split('\\'),'/') + '/' + scriptname + '"'+ '\n'
     # to avoid a bug with filename all \ are replaced with /.
-    header += "WRITE_STRING('SCRIPT PROCESS: Started...')\n"
+    header += "\nWRITE_STRING('SCRIPT PROCESS: Started...')\n"
 
     # Add the header to the script
     #-----------------------------
@@ -79,14 +79,18 @@ def runScript(name):
     
     # Perform after run commands
     #---------------------------
-    text += "\nsim1.write_spectra(_script)\n"
-    text += "WRITE_STRING('SCRIPT PROCESS: End')\n"
+    # text += "\nsim1.write_spectra(_script)\n"
+    text +="\nprint 'rename'\ntry:"
+    text +="\n   os.rename('scratch.tmp',_script+'.spe')"
+    text +="\nexcept:"
+    text +="\n   WRITE_STRING('ERROR: '+_script+'.spe cannot be written.')" 
+    text += "\nWRITE_STRING('SCRIPT PROCESS: End')\n"
     text = text.replace('\r', '\n')
     text = text.replace('\n\n', '\n')    
 
     # create a temporary copy of the executed file
     #---------------------------------------------
-    DEBUG_MSG(' Creating temporary script file"'+scriptname+'.tmp\n')              
+    WRITE_STRING(' Creating temporary script file"'+scriptname+'.tmp"\n')              
     try:
         f=open("workspace\\"+scriptname+".tmp","wb") 
         f.write(text)

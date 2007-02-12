@@ -45,6 +45,7 @@ ID_PASTE = wx.ID_PASTE
 ID_CLEAR = wx.ID_CLEAR
 ID_SELECTALL = wx.ID_SELECTALL
 ID_ABOUT = wx.ID_ABOUT
+ID_DOC = wx.NewId()
 ID_COPY_PLUS = wx.NewId()
 ID_COMPUTE = wx.NewId()
 ID_PASTE_PLUS = wx.NewId()
@@ -114,8 +115,9 @@ class Frame(wx.Frame):
                  'Compute using the current script - If modified, the current script must be saved before the menu becomes active')
          
         m = self.helpMenu = wx.Menu()
+        m.Append(ID_DOC, '&Online help', 'Online pyPulsar documentation')
         m.AppendSeparator()
-        m.Append(ID_ABOUT, '&About...', 'About this program')
+        m.Append(ID_ABOUT, '&About...', 'About pyPulsar')
 
         b = self.menuBar = wx.MenuBar()
         b.Append(self.fileMenu, '&File')
@@ -142,6 +144,7 @@ class Frame(wx.Frame):
         wx.EVT_MENU(self, ID_CLEAR, self.OnClear)
         wx.EVT_MENU(self, ID_SELECTALL, self.OnSelectAll)
         wx.EVT_MENU(self, ID_ABOUT, self.OnAbout)
+        wx.EVT_MENU(self, ID_DOC, self.OnDoc)
         
         wx.EVT_UPDATE_UI(self, ID_NEW, self.OnUpdateMenu)
         wx.EVT_UPDATE_UI(self, ID_OPEN, self.OnUpdateMenu)
@@ -174,7 +177,7 @@ class Frame(wx.Frame):
 
     def OnFileSaveAs(self, event):
         self.bufferSaveAs()
-
+        
     def OnSimulationCompute(self, event):
         #use to run the PULSAR program
         self.simulationCompute()

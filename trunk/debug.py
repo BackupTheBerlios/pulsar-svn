@@ -52,8 +52,9 @@ def pydebug_msg():
         
     string=rstrip(parameters.message.tostring())
     if parameters.debug:
-        wx.LogMessage("Debug>  %s" % (string))
-    
+        # wx.LogMessage("Debug>  %s" % (string))
+        print "Debug>  %s" % (string)
+        
 #------------------------------------------------------------------------------
 def pywrite_string():
 #------------------------------------------------------------------------------    
@@ -71,8 +72,9 @@ def DEBUG_MSG(string):
         lines=string+"\n"
         f.writelines(lines)
         f.close()
-        wx.LogMessage("Debug>  %s" % (string))
-         
+        # wx.LogMessage("Debug>  %s" % (string))
+        print "Debug>  %s" % (string)
+        
 #------------------------------------------------------------------------------
 def debug_on_error(type, value, tb):
 #------------------------------------------------------------------------------
@@ -90,7 +92,9 @@ def WRITE_STRING(string):
     f.writelines(lines)
     f.close()
     wx.LogMessage("%s " % string)
-
+    #write also on the debug output
+    print "%s " % string
+    
 #------------------------------------------------------------------------------
 def write_string(string):
 #------------------------------------------------------------------------------

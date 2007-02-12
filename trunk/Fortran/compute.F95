@@ -1,4 +1,4 @@
-!     Last change:  CF    7 Feb 2007    5:38 pm
+!     Last change:  CF   12 Feb 2007    9:57 am
 !
 !$compute.f95
 !
@@ -36,7 +36,6 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
   implicit none
 
-
   EXTERNAL pywrite_string
   EXTERNAL pydebug_msg
 
@@ -51,9 +50,9 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
   end interface
 
   interface
-    subroutine wigner(angle,d)
+    subroutine wigner(angle,dw)
       real*8, intent(in)  :: angle
-      real*8, intent(out) :: d(-4:4,-4:4)
+      real*8, intent(IN out) :: dw(-4:4,-4:4)
     end subroutine wigner
   end interface
 
@@ -87,48 +86,37 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
 ! loop index and flags
 ! --------------------
-  integer*4 :: i
-  integer*4 :: j
-  integer*4 :: k
-  integer*4 :: l
-  integer*4 :: nc
-
-  INTEGER*4 :: iflg
+  integer*4 :: i=0
+  integer*4 :: j=0
+  integer*4 :: k=0
+  integer*4 :: l=0
+  integer*4 :: nc=0
 
 ! Format strings
 !----------------
-  character*32 ::fmt_rho="(11(g10.2,1x,g10.2,3x))"
-  character*32 ::fmts2="(11(I10,2x))"
+  CHARACTER*32  ::fmts="*"
 
 ! temporary strings
 !------------------
+  CHARACTER (LEN=255) :: str=''
 
-  CHARACTER (LEN=255) :: str
 ! local parameters
 ! ----------------
-
-  real*8    :: powder1
-  real*8    :: powder2
+  real*8    :: powder1=0.0d0
+  real*8    :: powder2=0.0d0
   integer*8 :: inorm1(16)=(/2154752,933774,589820,430020,338069,278417,236611, &
    205703,181927,163068,147749,135059,124378,115254,107382,100517/)
   integer*8 :: inorm2(16)=(/6122925,3121593,2088467,1568265,1255355,1046463, &
    897112, 785115,697918,628170,571061,523524,483263,448748,418821,392639/)
-
-  real*8    :: rotorperiod ! rotor period in usec (1e6/spinningspeed)
-
-  real*8    :: rpf ! rotor period fraction (due to rfstep)
-
-  real*8    :: dms
-  real*8    :: coefdip
-  complex*8 :: tempr2m(0:2)
-  real*8    :: tempangle(3)
-
-  logical*8 :: wholesphere
-
+  real*8    :: rotorperiod=0.0d0 ! rotor period in usec (1e6/spinningspeed)
+  real*8    :: rpf=0.0d0 ! rotor period fraction (due to rfstep)
+  real*8    :: dms=0.0d0
+  real*8    :: coefdip=0.0d0
+  complex*8 :: tempr2m(0:2)=0.0d0
+  real*8    :: tempangle(3)=0.0d0
+  logical*8 :: wholesphere=.false.
   integer*8 :: nscans=1
-  integer*8 :: ncoupled
-  INTEGER*8 :: qu2t
-  INTEGER*8 :: idnfase
+  integer*8 :: ncoupled=0
 
 !----------------------------------------------!
 ! check parameters and prepare the calculation !
@@ -142,6 +130,10 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
     message=CRLF//CRLF//" START SIMULATION"//CRLF//UNDERLINE
     Call pywrite_string()! print text parameters (parameter DEBUG_LVL -normal=5)
   END if
+
+  !call reset_share()
+  !call reset_operators()
+
 !
   if (verbose) then
     message= "  -- Verbose Flag is on "
@@ -161,11 +153,11 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 ! but I did it in the case where the program is used without python
 ! Debug level 1: all messages
 !-----------------------------------------------------------------------------------
-  message=""
-  if (debug) then
-  	message= "CHECK ALLOCATION OF PARAMETER ARRAYS" // CRLF // TAB // TAB // UNDERLINE// UNDERLINE
-    Call pydebug_msg()
-  end if
+  message= "CHECK ALLOCATION OF PARAMETER ARRAYS"
+  Call pydebug_msg()
+  message= "------------------------------------"
+  Call pydebug_msg()
+
 
   if (allocated(nucleus)) then
 
@@ -180,10 +172,12 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
     end if
 
   else
+
     message= TAB // " *** ERROR ***: at least one nucleus needs to be defined! I can not continue."
     Call pywrite_string()
     flagerror=.true.
     return
+
   end if
 
   if (debug) then
@@ -215,12 +209,8 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
   if (allocated(pulse)) then
     ncycles=size(pulse,1)
-
-    if (debug) then
-      message=TAB // "Number of Periods in Sequence" // TRIM(num2str(ncycles,"(I5)"))
-      Call pydebug_msg()
-    END if
-
+    message=TAB // "Number of Periods in Sequence" // TRIM(num2str(ncycles,"(I5)"))
+    Call pydebug_msg()
   else
     message = TAB // " *** ERROR ***: A pulse sequence needs to be defined!... I can not continue."
     Call pywrite_string()
@@ -258,12 +248,10 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
   ng=MAX(nt,ng)
 
-  if (debug) then
-    message = TAB // "ng : " // TRIM(num2str(ng,"(I5)"))
-    Call pydebug_msg()
-    message = TAB // "nt : " // TRIM(num2str(nt,"(I5)"))
-    Call pydebug_msg()
-  end if
+  message = TAB // "ng : " // TRIM(num2str(ng,"(I5)"))
+  Call pydebug_msg()
+  message = TAB // "nt : " // TRIM(num2str(nt,"(I5)"))
+  Call pydebug_msg()
 
   dg=2.0d0*pi/dble(ng)
 
@@ -287,17 +275,17 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 ! spin system
 ! -----------
   if (allocated(nucleus)) then
-    spins=nucleus(1,2)! spin of s
-    vls=nucleus(1,3)! larmor of s                   (in hz)
+    spins=nucleus(1,2) ! spin of s
+    vls=nucleus(1,3)   ! larmor of s                   (in hz)
 !---------------------------------------------------------------------------
 !TODO: I have to CHECK if the sign of vls (gyromagnetic) may be usefull later!
 ! I didn't use it here due to the problems that arise in definition of chemical shift and so on
 !--------------------------------------------------------------
     abundance=nucleus(1,4)
-    isos=chemicalshift(1,2)! isotropic chemical shift of s (in hz)
+    isos=chemicalshift(1,2) ! isotropic chemical shift of s (in hz)
     etacs=chemicalshift(1,4)! csa assymetry of s
     csas=chemicalshift(1,3)/(3.0d0+etacs)! csa of s
-    cqs=quadrupole(1,2)! cq of s
+    cqs=quadrupole(1,2)     ! cq of s
     etaqs=quadrupole(1,3)! etaq of s
     t2s=t2(1,2)! relaxation t2 of s
     do i=1,3
@@ -418,7 +406,8 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
 ! define all operators
 ! --------------------
-  call init_operators()
+  call reset_operators()
+  call show_operators(pydebug_msg)
 
 ! preparation pulses and delays
 !------------------------------
@@ -448,20 +437,33 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
   do nc=1,ncycles
 
     rflength(nc)=pulse(nc,2)
-    if (rflength(nc).eq.0) then
-         if (verbose) then
-           Message=TAB // "RFLength=0 --> Ideal Pulse ASSUMED"
-           call pywrite_string()
-         end if
+    if (ABS(rflength(nc)).le.eps) then
+         Message=TAB // "RFLength=0 --> Ideal Pulse ASSUMED"
+         Call pydebug_msg()
          idealpulse=.true.
-    end if
+    else
+         Message=TAB // "RFLength="// num2str(rflength(nc),"(F10.3)")
+         Call pydebug_msg()
+    END if
     rfpowers(nc)=pulse(nc,3)
+    Message=TAB //"rfpower(S): "// num2str(rfpowers(nc),"(F10.3)")
+    Call pydebug_msg()
     rfoffsets(nc)=pulse(nc,4)
+    Message=TAB //"roffset(S): "// num2str(rfoffsets(nc),"(F10.3)")
+    Call pydebug_msg()
     rfphases(nc)=radians(pulse(nc,5))
+    Message=TAB //"rfphase(S): "// num2str(rfphases(nc),"(F10.3)")
+    Call pydebug_msg()
 
     rfpoweri(nc)=pulse(nc,6)
+    Message=TAB //"rfpower(I): "// num2str(rfpoweri(nc),"(F10.3)")
+    Call pydebug_msg()
     rfoffseti(nc)=pulse(nc,7)
+    Message=TAB //"rfoffset(I): "// num2str(rfoffseti(nc),"(F10.3)")
+    Call pydebug_msg()
     rfphasei(nc)=radians(pulse(nc,8))
+    Message=TAB //"rfphase(I): "// num2str(rfphasei(nc),"(F10.3)")
+    Call pydebug_msg()
 
 ! calculate the increment dtp for pulse effect integration
 ! --------------------------------------------------------
@@ -480,19 +482,41 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
       ntpadd(nc)=floor( (rflength(nc)-dble(itour(nc)+1)*rotorperiod)/deltatp(nc) )
       deltatpadd(nc)=rflength(nc)-dble(itour(nc)+1)*rotorperiod-dble(ntpadd(nc))*deltatp(nc)
     end if
+    Message=TAB //"ntp: "// num2str(ntp(nc),"(I10)")
+    Call pydebug_msg()
+    Message=TAB //"deltatp: "// num2str(deltatp(nc),"(F10.3)")
+    Call pydebug_msg()
+    Message=TAB //"ntpadd: "// num2str(ntpadd(nc),"(I10)")
+    Call pydebug_msg()
+    Message=TAB //"deltatpadd: "// num2str(deltatpadd(nc),"(F10.3)")
+    Call pydebug_msg()
 
     rfdelay(nc)=delay(nc,2)
+    Message=TAB //"rfdelay "// num2str(rfdelay(nc),"(F10.3)")
+    Call pydebug_msg()
 
     t2ss(nc)=exp(-(rflength(nc)+rfdelay(nc))/t2s)
+    Message=TAB //"t2ss: "// num2str(t2ss(nc),"(F10.3)")
+    Call pydebug_msg()
     t2ii(nc)=exp(-(rflength(nc)+rfdelay(nc))/t2i)
+    Message=TAB //"t2ii: "// num2str(t2ii(nc),"(F10.3)")
+    Call pydebug_msg()
     t2si(nc)=(t2ss(nc)+t2ii(nc))/2.0d0
+    Message=TAB //"t2si: "// num2str(t2si(nc),"(F10.3)")
+    Call pydebug_msg()
 
 ! decoupling
 !-----------
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! To check !!!!!!!
     if(delay(nc,3)>.1d0) then
-      decouple(nc)=0
+      decouple(nc)=1
+      Message=TAB //"decouple:yes"
+      Call pydebug_msg()
     else
-      decouple(nc)=1.
+      decouple(nc)=0
+      Message=TAB //"decouple:no"
+      Call pydebug_msg()
     end if
 
   end do
@@ -516,23 +540,23 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
 ! tensor component of the dipolar tensor / quadrupole s  (todo: change this to have a reference
 !                                          with respect to the molecular frame)
-  r2mdsi=0.0d0
+  r2mdsi=CMPLX(0.0d0,0.0D0)
   if (icoupled>0) call orientate(-dsiangle,0.0d0,r2mdsi)
 ! the sign - before dsiangle depend on the definition choosen (euler or polar angle)
 
 ! quadrupole i / quadrupole s
 
-  r2mqi=0.0d0
+  r2mqi=CMPLX(0.0d0,0.0D0)
   if (icoupled>0) call orientate(qiangle,etaqi,r2mqi)
 
 ! csa s / quadrupole s
 !
-  r2mcs=0.0d0
+  r2mcs=CMPLX(0.0d0,0.0D0)
   call orientate(csangle,etacs,r2mcs)
 
 ! csa i / quadrupole s
 !
-  r2mci=0.0d0
+  r2mci=CMPLX(0.0d0,0.0D0)
   if (icoupled>0) call orientate(ciangle,etaci,r2mci)
 
 ! other dipolar coupling with non-excited nuclei (k)
@@ -551,11 +575,11 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
     allocate (mk(kcoupled))
     dipk=0.0d0
     mk=0
-    r2mdsk=0.0d0
+    r2mdsk=CMPLX(0.0d0,0.0D0)
     do k=1,kcoupled
       nk(k)=nint(2.0d0*spink(k))
       coefdip=coefdip/(2.0d0*spink(k)+1.0d0)
-      tempr2m=0.0d0
+      tempr2m=CMPLX(0.0d0,0.0d0)
       do j=0,2
         tempangle(j)=dskangle(k,j)
       end do
@@ -571,8 +595,9 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 ! frequencies and amplitude
   allocate (wr(0:nt,0:2*nt,ns))
   wr=0.0d0
+
   allocate (amp(0:nt,0:2*nt,ns,-nsb:nsb))
-  amp=0.0d0
+  amp=CMPLX(0.0d0,0.0D0)
 
 ! ll arrays
 !----------
@@ -580,6 +605,7 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
   if (kcoupled>0) allocate (adks(kcoupled,-4:4))
   allocate (a(ns,4))
   a=0.0d0
+
   allocate (p(ns,-nsb:nsb))
   p=0.0d0
 
@@ -594,6 +620,7 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
   allocate (u(nsi,nsi))
   u=0.0d0
+
   allocate (ui(nsi,nsi))
   ui=0.0d0
   allocate (uf(nsi,nsi))
@@ -629,23 +656,46 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 ! and the density matrix
   allocate (rott(nsi,nsi))! rortt and roitt
   rott=0.0d0
+
 ! allocate some other important arrays
   allocate (qt(0:nt,0:2*nt,ns,-nsb:nsb))
-  qt=0.0d0
+  qt=CMPLX(0.0d0,0.0d0)
 
   if (ALLOCATED(spec)) deallocate (spec)
 
 !allocate (spec(npts*2+2))  ! will contain the simulated spectrum
   allocate (spec(npts))! will contain the simulated spectrum
-  spec=0.0d0
+  spec=CMPLX(0.0d0,0.0d0)
 
   if (ALLOCATED(ros)) deallocate (ros)
   allocate (ros(ns,ns))! contains the density matrix of S
-  ros=0.0d0
+  ros=CMPLX(0.0d0,0.0d0)
+
+  !****
+
+    message="temp rho:S density matrix"
+    call pywrite_string()
+    write (str,"(I3)") ns
+    fmts="("//TRIM(adjustl(str))// "(f10.4,1x))"
+    message="...real part..."
+    call pywrite_string()
+    do j=1,ns
+      write(message, fmts)  (REAL(ros(j,i)),i=1,ns)
+      call pywrite_string()
+    end do
+    message="...imag part..."
+    call pywrite_string()
+      do j=1,ns
+      write(message, fmts)  (AIMAG(ros(j,i)),i=1,ns)
+      call pywrite_string()
+    end do
+
+
+  !****
 
   if (ALLOCATED(roi)) deallocate (roi)
   allocate (roi(ni,ni))! contains the density matrix of I
-  roi=0.0d0
+  roi=CMPLX(0.0d0,0.0d0)
 
 ! preparation for phase cycling or coherence pathway (CTP) selection
 !-------------------------------------------------------------------
@@ -654,11 +704,10 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
   if (allocated(ctp)) then
     nctp=SIZE(ctp,1)
     IF (debug) then
-          PRINT *,"ctp : ",ctp
           message=TAB // "Nctp : " // TRIM(num2str(NCtp,"(I5)"))
           Call pydebug_msg()
-  !        message=TAB // "ctp : " !// TRIM(num2str(ni,"(I5)"))
-  !        Call pydebug_msg()
+          WRITE(message,*) TAB, "ctp : ",ctp
+          Call pydebug_msg()
     END if
   else
     IF (debug) then
@@ -678,10 +727,6 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
 ! return the density matrix of S
 !-------------------------------
-  if (verbose) then
-    message = "return density matrix of S"
-    call pywrite_string()
-  end if
 
   ros=0.0d0
   do i=1,ns
@@ -694,20 +739,30 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
   ros=ros/dble(ni)/fnexp
 
   if (verbose.and.ns.GE.2) then
-    do i=1,ns
-      WRITE(message,fmt_rho) (ros(i,j),j=1,ns)
+
+    message="rho:S density matrix"
+    call pywrite_string()
+    write (str,"(I3)") ns
+    fmts="("//TRIM(adjustl(str))// "(f10.4,1x))"
+    message="...real part..."
+    call pywrite_string()
+    do j=1,ns
+      write(message, fmts)  (REAL(ros(j,i)),i=1,ns)
       call pywrite_string()
     end do
-  end if
+    message="...imag part..."
+    call pywrite_string()
+      do j=1,ns
+      write(message, fmts)  (AIMAG(ros(j,i)),i=1,ns)
+      call pywrite_string()
+    end do
 
+  END if
 
 ! Return the density matrix of I
 !-------------------------------
-  if (verbose.and.ni.GE.2) then
-    message = "return density matrix of I"
-    call pywrite_string()
-  end if
-  if (icoupled>0) then
+  if (icoupled>0.and.ni.GE.2) then
+
     roi=0.0d0
     do i=1,ni
       do j=1,ni
@@ -718,12 +773,25 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
     end do
     roi=roi*vls/vli/dble(ns)/fnexp
 
-    if (verbose.and.ni.GE.2) then
-      do i=1,ni
-        WRITE(message,fmt_rho) (roi(i,j),j=1,ni)
+    if (verbose) then
+      message="rho:I density matrix"
+      call pywrite_string()
+      write (str,"(I3)") ns
+      fmts="("//TRIM(adjustl(str))// "(f10.4,1x))"
+      message="...real part..."
+      call pywrite_string()
+      do j=1,ns
+        write(message, fmts)  (REAL(roi(j,i)),i=1,ns)
+        call pywrite_string()
+      end do
+      message="...imag part..."
+      call pywrite_string()
+      do j=1,ns
+        write(message, fmts)  (AIMAG(roi(j,i)),i=1,ns)
         call pywrite_string()
       end do
     end if
+
   end if
 
 
@@ -1208,91 +1276,3 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 
 end subroutine compute
 !
-
-subroutine reset()
-!---------------------------
-! DEallocation of all tables
-!---------------------------
- USE share
-
-  if (ALLOCATED(nucleus)) DEALLOCATE(nucleus)
-  if (ALLOCATED(chemicalshift)) DEALLOCATE(chemicalshift)
-  if (ALLOCATED(indirect)) DEALLOCATE(indirect)
-  if (ALLOCATED(dipole)) DEALLOCATE(dipole)
-  if (ALLOCATED(quadrupole)) DEALLOCATE(quadrupole)
-  if (ALLOCATED(t2)) DEALLOCATE(t2)
-  if (ALLOCATED(pulseangle)) DEALLOCATE(pulseangle)
-  if (ALLOCATED(pulse))  DEALLOCATE(pulse)
-  if (ALLOCATED(delay))  DEALLOCATE(delay)
-  if (ALLOCATED(coher))  DEALLOCATE(coher)
-  if (ALLOCATED(ctp))  DEALLOCATE(ctp)
-  if (ALLOCATED(spec))  DEALLOCATE(spec)
-  if (ALLOCATED(ros))  DEALLOCATE(ros)
-  if (ALLOCATED(roi))  DEALLOCATE(roi)
-  if (ALLOCATED(nphase))  DEALLOCATE(nphase)
-  if (ALLOCATED(level))  DEALLOCATE(level)
-  if (ALLOCATED(qu1))  DEALLOCATE(qu1)
-  if (ALLOCATED(iref))  DEALLOCATE(iref)
-  if (ALLOCATED(spink)) DEALLOCATE(spink)
-  if (ALLOCATED(vlk)) DEALLOCATE(vlk)
-  if (ALLOCATED(jsk)) DEALLOCATE(jsk)
-  if (ALLOCATED(dsk)) DEALLOCATE(dsk)
-  if (ALLOCATED(dskangle)) DEALLOCATE(dskangle)
-  if (ALLOCATED(rfpowers)) DEALLOCATE(rfpowers)
-  if (ALLOCATED(rfoffsets))  DEALLOCATE(rfoffsets)
-  if (ALLOCATED(rfphases))  DEALLOCATE(rfphases)
-  if (ALLOCATED(rfpoweri))  DEALLOCATE(rfpoweri)
-  if (ALLOCATED(rfoffseti))  DEALLOCATE(rfoffseti)
-  if (ALLOCATED(rfphasei))  DEALLOCATE(rfphasei)
-  if (ALLOCATED(rflength)) DEALLOCATE(rflength)
-  if (ALLOCATED(rfdelay)) DEALLOCATE(rfdelay)
-  if (ALLOCATED(decouple)) DEALLOCATE(decouple)
-
-  if (ALLOCATED(itour)) DEALLOCATE(itour)
-  if (ALLOCATED(ntp)) DEALLOCATE(ntp)
-  if (ALLOCATED(deltatp)) DEALLOCATE(deltatp)
-  if (ALLOCATED(ntpadd)) DEALLOCATE(ntpadd)
-  if (ALLOCATED(deltatpadd)) DEALLOCATE(deltatpadd)
-  if (ALLOCATED(t2ss)) DEALLOCATE(t2ss)
-  if (ALLOCATED(t2ii)) DEALLOCATE(t2ii)
-  if (ALLOCATED(t2si)) DEALLOCATE(t2si)
-
-  if (ALLOCATED(rott)) DEALLOCATE(rott)
-  if (ALLOCATED(qt)) DEALLOCATE(qt)
-
-  if (ALLOCATED(u1s)) DEALLOCATE(u1s)
-  if (ALLOCATED(u2s)) DEALLOCATE(u2s)
-
-  if (ALLOCATED(r2mdsk)) DEALLOCATE(r2mdsk)
-  if (ALLOCATED(nk)) DEALLOCATE(nk)
-
-  if (ALLOCATED(dipk)) DEALLOCATE(dipk)
-  if (ALLOCATED(mk)) DEALLOCATE(mk)
-
-  if (ALLOCATED(wr)) DEALLOCATE(wr)
-  if (ALLOCATED(amp)) DEALLOCATE(amp)
-
-  if (ALLOCATED(adks)) DEALLOCATE(adks)
-  if (ALLOCATED(a)) DEALLOCATE(a)
-  if (ALLOCATED(p)) DEALLOCATE(p)
-  if (ALLOCATED(u)) DEALLOCATE(u)
-  if (ALLOCATED(ui)) DEALLOCATE(ui)
-  if (ALLOCATED(uf)) DEALLOCATE(uf)
-  if (ALLOCATED(usi)) DEALLOCATE(usi)
-  if (ALLOCATED(usf)) DEALLOCATE(usf)
-  if (ALLOCATED(uint)) DEALLOCATE(uint)
-  if (ALLOCATED(ro)) DEALLOCATE(ro)
-  if (ALLOCATED(rot)) DEALLOCATE(rot)
-  if (ALLOCATED(y)) DEALLOCATE(y)
-  if (ALLOCATED(htst)) DEALLOCATE(htst)
-  if (ALLOCATED(z)) DEALLOCATE(z)
-  if (ALLOCATED(vp)) DEALLOCATE(vp)
-  if (ALLOCATED(expvp)) DEALLOCATE(expvp)
-  if (ALLOCATED(htsr)) DEALLOCATE(htsr)
-  if (ALLOCATED(sti)) DEALLOCATE(sti)
-  if (ALLOCATED(rosto)) DEALLOCATE(rosto)
-  if (ALLOCATED(q)) DEALLOCATE(q)
-  if (ALLOCATED(phasei)) DEALLOCATE(phasei)
-  if (ALLOCATED(roctp)) deallocate (roctp)
-
-end subroutine reset

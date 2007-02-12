@@ -47,6 +47,8 @@ from debug import *
 false=No=no=FALSE=False
 true=Yes=yes=TRUE=True
 
+DEBUG=True
+
 #============================================================================
 class PlotFigure(wx.Window):
 #============================================================================
@@ -71,6 +73,8 @@ class PlotFigure(wx.Window):
         self.Fit()
 
         self.filename=filename
+        if DEBUG :
+            DEBUG_MSG("plot :"+filename)
         self.n=0
         self.ni=0
         self.vl=0
@@ -104,11 +108,13 @@ class PlotFigure(wx.Window):
     def read_spectra(self):
         #frequency=(i+1)*sw/n-sw/2.
         #ppm=frequency*1.e6/abs(vl)
-        DEBUG_MSG(self.filename)
-        if os.path.exists(self.filename):
+        DEBUG_MSG("read_spectra : "+self.filename)
+        
+        try: #Handling filename error (Correction of a bug for NEw in file menu)
             f=open(self.filename,"rb")
-        else:
+        except:
             return False
+        
         try: # Handling opening erros
             #first the header
             line=f.readline()    # PULSAR string

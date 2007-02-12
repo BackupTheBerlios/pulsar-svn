@@ -88,18 +88,40 @@ class Simulation:
     collection_spectra = []
     collection_data = []
     collection_label=[]
-    
+    sample=None
+    sequence=None
+
+    def __del__(self):
+        WRITE_STRING("DESTROY this  simulation instance")
+###        reset()
+##        self.current_spectrum = []
+##        self.collection_spectra = []
+##        self.collection_data = []
+##        self.collection_label=[]
+        
     #----------------------------------------------------------------------------------------
     def __init__(self, protonfrequency = "400 MHz", verbose=False, debug=False):
     #----------------------------------------------------------------------------------------
         """
         Class constructor -additionally set default parameters for the simulation
         """
-        DEBUG_MSG("Simulation INIT")
+        #WRITE_STRING("INIT a simulation instance")
         #it is mandatory to reset f95pulsar when doing a new simulation
         #that means zero some arrays that can have different size in
         #different simulation
 
+        #Reset most of the already allocated parameters
+        self.verbose=verbose or debug
+        self.debug=debug
+        self.reset_pulsar()
+        self.reset_nucleus()
+        self.reset_spectra()
+        
+        self.current_spectrum = []
+        self.collection_spectra = []
+        self.collection_data = []
+        self.collection_label=[]
+       
         # Verbose?
         self.verbose=verbose or debug
         self.debug=debug
@@ -107,12 +129,7 @@ class Simulation:
         #Fortan flags
         parameters.verbose=self.verbose
         parameters.debug=self.debug
-
-        #Reset most of the already allocated parameters
-        self.reset_pulsar()
-        self.reset_nucleus()
-        self.reset_spectra()
-            
+        
         # initialise some basic parameters for the simulation
         self.set_protonfrequency(protonfrequency)            
         self.spinningspeed=0.
@@ -168,7 +185,8 @@ class Simulation:
         DEBUG_MSG("RESET PULSE SEQUENCE")
         parameters.pulse = []
         parameters.delay = []
-        parameters.coher = []               
+        parameters.coher = []
+        
 
     #-----------------------    
     def reset_nucleus(self):
@@ -190,8 +208,11 @@ class Simulation:
         # and load all the new parameters
         self.validate()
 
-        parameters.controls(pydebug_msg)
-
+        #reset_share()
+        #reset_operators()
+        control_parameters(pydebug_msg)
+        diagonalize.dealloc()
+        
         # No nucleus?
         if not self.sample.nuclei:
             return
@@ -457,14 +478,14 @@ class Simulation:
         self.flag_sum=do_sum
                     
     #-------------------------------------------
-    def write_spectra(self,filename = "pulsar"):
+    def write_spectra(self):
     #-------------------------------------------
         """
         Write spectra into a file in various format
         args: filename - name of the output file (default:'pulsar.spe'
         """
-        DEBUG_MSG("WRITE_SPECTRA "+filename)
-        
+        DEBUG_MSG("WRITE_SPECTRA ")
+
         # TODO : implement various format
         n = self.npts
         sw= self.sw
@@ -528,8 +549,12 @@ class Simulation:
             for i in range(len(spec)):
                 line = string.strip(repr(spec[i].imag))+" "+string.strip(repr(spec[i].real))+'\n'
                 lines.append(line)
-        lines.append("END"+'\n')  
-        f = open(filename+".spe","wb")
+        lines.append("END"+'\n')
+        try:
+            os.remove("scratch.tmp")
+        except:
+            pass
+        f = open("scratch.tmp","wb")
         f.writelines(lines)
         f.close()
         if (verbose) :
@@ -574,15 +599,24 @@ class Simulation:
             index: integer - index start at 0
         """
         DEBUG_MSG("SELECT_NUCLEUS")
+
+        #First we have to handle a possible errors arising when no observed channels have been defined
+        try:
+            essai=self.S_channel
+        except:
+            print  self.sample.observed
+            self.S_channel=self.sample.observed
         
         if (nucleus is None) and (index is None):
-            # we assumed that the observing channel in this case
-            # corresponds to the first set nucleus on the observed nucleus
+            # select_nucleus()
+            #   we assumed that the observing channel in this case
+            #   corresponds to the first set nucleus on the observed nucleus  
             nucleus=self.S_channel
             index=0
             
         elif type(nucleus)is not types.StringType:
-            # The nucleaus name was not given - probably only the index
+            # select_nucleus(1)
+            #    The nucleus name was not given - probably only the index
             index=nucleus
             nucleus=self.S_channel
             
@@ -620,11 +654,20 @@ class Simulation:
             WRITE_STRING("\nError in select_nucleus")
             
     #-------------------------------------------------------------
-    def get_numberofnuclei(self,nucleus):
+    def get_numberofnuclei(self,isotope):
     #-------------------------------------------------------------
+        """
+        Get the number of nuclei of a given type
+        Parameters
+        * isotope: required isotope name 
+        Usage
+            ...
+            get_numberofnuclei("27Al")   # determine the number of 27Al nuclei
+            ...
+        """
         DEBUG_MSG("GET NUMBER OF NUCLEI")
         try:
-            nb= len(self.sample.nuclei[nucleus])
+            nb= len(self.sample.nuclei[isotope])
             if (verbose) : WRITE_STRING("\nNumber of nuclei:"+str(nb))
         except:
             WRITE_STRING("\nError in get_numberofnuclei")
@@ -633,7 +676,9 @@ class Simulation:
     #------------------------
     def set_idealpulse(self):
     #------------------------
-        """set pulse as ideal (dirac)"""
+        """
+        The pulse is considered as an ideal pulse
+        """
         DEBUG_MSG("SET_IDEAL")
         self.sequence.idealpulse()
         
@@ -693,6 +738,7 @@ class Sample:
         """
         DEBUG_MSG("Sample INIT")
         self.nuclei = {}
+        self.observed = None    #no observed nucleus defined (bydefault it will be the first one define)
         
     #---------------------------------    
     def add_nucleus(self, newnucleus):
@@ -701,7 +747,12 @@ class Sample:
         add a nucleus to the sample
         """
         DEBUG_MSG("Sample ADD_NUCLEUS")
-        key=newnucleus.isotope # the name of the isotope becom the key
+        key=newnucleus.isotope # the name of the isotope become the key
+        if not self.nuclei:
+            # if there is no nuclei already defined
+            self.observed=key   # in case we need to know what was the first nuclei entered in this dictionary
+            DEBUG_MSG("observed default"+self.observed)
+
         if not self.nuclei.has_key(key):
             self.nuclei[key] = []  
         self.nuclei[key].append(newnucleus)
@@ -1383,7 +1434,7 @@ def set_indirect(index,second,j = 0,delta = 0,eta = 0,alpha = 0,beta = 0,gamma =
         if parameters.indirect[i,3]!=0 : WRITE_STRING("\teuler J ("+str(index)+","+str(second)+"): ["+ str(parameters.indirect[i,5])+","+str(parameters.indirect[i,6])+","+str(parameters.indirect[i,7])+"]")     
 
 # direct dipolar coupling -----------------------------------------
-def set_dipole(index,second,d=0,distance=0,alpha=0,beta=0,gamma=0):
+def set_dipole(index,second,dip=0,distance=0,alpha=0,beta=0,gamma=0):
 #------------------------------------------------------------------
     """
     -- set_dipole -- 
@@ -1392,7 +1443,7 @@ def set_dipole(index,second,d=0,distance=0,alpha=0,beta=0,gamma=0):
         index - index of the first nucleus (defined previously by set_nucleus)
                 Required to be one.
         second - index of the second nucleus (defined previously by set_nucleus)
-        d - dipolar coupling value
+        dip - dipolar coupling value
         distances - distance between nucleus in angstrom (used only if d=0)
         alpha, beta, gamma - euler angles with respect to the molecular frame
     """
@@ -1414,15 +1465,15 @@ def set_dipole(index,second,d=0,distance=0,alpha=0,beta=0,gamma=0):
             WRITE_STRING("\n*set_dipole*\nERROR: the second index does not correspond to an existing nucleus!\n")
             WRITE_STRING(set_dipole.__doc__)
             exit()
-    d=evaluate(d)
+    dip=evaluate(dip)
     distance=evaluate(distance)
-    if (distance!=0) and (d==0) : d=dipole_from_distance(distance,parameters.nucleus[index-1,2],parameters.nucleus[second-1,2])
+    if (distance!=0) and (dip==0) : dip=dipole_from_distance(distance,parameters.nucleus[index-1,2],parameters.nucleus[second-1,2])
     alpha=evaluate(alpha)
     beta=evaluate(beta) 
     gamma=evaluate(gamma)
     if parameters.dipole==None:
         if (verbose) : WRITE_STRING("\ndipolar coupling:")
-        ar=[[index,second,d,distance,alpha,beta,gamma]]   
+        ar=[[index,second,dip,distance,alpha,beta,gamma]]   
     else:
         size=len(parameters.dipole) 
         ar=[[0,0,0,0,0,0,0] for i in range(size+1)]
@@ -1431,7 +1482,7 @@ def set_dipole(index,second,d=0,distance=0,alpha=0,beta=0,gamma=0):
         while i < size :
             ar[i]=[int(parameters.dipole[i,0]),int(parameters.dipole[i,1]),parameters.dipole[i,2], parameters.dipole[i,3], parameters.dipole[i,4],parameters.dipole[i,5],parameters.dipole[i,6]] 
             i=i+1
-        ar[size]=[index,second,d,distance,alpha,beta,gamma]       
+        ar[size]=[index,second,dip,distance,alpha,beta,gamma]       
     parameters.dipole=ar                                          #allocate or reallocate and initialize       
      
     size=len(parameters.dipole)
