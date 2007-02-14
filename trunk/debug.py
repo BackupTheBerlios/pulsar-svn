@@ -72,8 +72,7 @@ def DEBUG_MSG(string):
         lines=string+"\n"
         f.writelines(lines)
         f.close()
-        # wx.LogMessage("Debug>  %s" % (string))
-        print "Debug>  %s" % (string)
+        print "Debug >  %s" % (string)
         
 #------------------------------------------------------------------------------
 def debug_on_error(type, value, tb):
@@ -91,10 +90,24 @@ def WRITE_STRING(string):
     lines=string+"\n"
     f.writelines(lines)
     f.close()
-    wx.LogMessage("%s " % string)
+    wx.LogMessage(string)
     #write also on the debug output
-    if DEBUG: print "%s " % string
-    
+    if DEBUG: print string
+
+#------------------------------------------------------------------------------
+def WRITE_ERROR(string):
+#------------------------------------------------------------------------------
+    f = open("pyPulsar.log","a")
+    lines=string+"\n"
+    f.writelines(lines)
+    f.close()
+    stringerror="\n**** ERROR ****:  %s \n" % string
+    wx.LogMessage(' ')
+    wx.LogMessage(' ')
+    wx.LogMessage(stringerror)
+    #write also on the debug output
+    if DEBUG: print '\n\n',stringerror
+
 #------------------------------------------------------------------------------
 def write_string(string):
 #------------------------------------------------------------------------------

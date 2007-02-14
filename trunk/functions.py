@@ -77,6 +77,8 @@ ALL = all = 0
 CENTRAL = Central = central = 1
 SATELLITE = Satellite = satellite = 2
 
+
+
 #==============================================================================
 class Simulation:
 #==============================================================================
@@ -91,13 +93,9 @@ class Simulation:
     sample=None
     sequence=None
 
+    
     def __del__(self):
-        WRITE_STRING("DESTROY this  simulation instance")
-###        reset()
-##        self.current_spectrum = []
-##        self.collection_spectra = []
-##        self.collection_data = []
-##        self.collection_label=[]
+        DEBUG_MSG("DESTROY this  simulation instance")
         
     #----------------------------------------------------------------------------------------
     def __init__(self, protonfrequency = "400 MHz", verbose=False, debug=False):
@@ -110,7 +108,10 @@ class Simulation:
         #that means zero some arrays that can have different size in
         #different simulation
 
+        self.ABORT=False
+
         #Reset most of the already allocated parameters
+                
         self.verbose=verbose or debug
         self.debug=debug
         self.reset_pulsar()
@@ -154,22 +155,30 @@ class Simulation:
 
         # initialise a "void" pulse sequence
         self.sequence=PulseSequence()
-               
+        self.S_channel=None
+        self.I_channel=None
+       
     #----------------------
     def reset_pulsar(self):
     #----------------------
         """
         Deallocate most of the important arrays in the f95Pulsar module
         """
+        if self.ABORT:
+            return
+
         DEBUG_MSG("RESET PULSAR")
         reset()      #CALL TO A F95PULSAR reset function
-        
+      
     #-----------------------
     def reset_spectra(self):
     #-----------------------
         """
         Delete all spectra in a collection to zero (initialisation)  
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("RESET SPECTRA")
         self.collection_spectra = []
         self.list_lb=[]
@@ -182,11 +191,13 @@ class Simulation:
         """
         Deallocate pulse arrays (initialisation) 
         """
+        if self.ABORT:
+            return  
         DEBUG_MSG("RESET PULSE SEQUENCE")
         parameters.pulse = []
         parameters.delay = []
         parameters.coher = []
-        
+        self.ctpall=[]
 
     #-----------------------    
     def reset_nucleus(self):
@@ -194,6 +205,8 @@ class Simulation:
         """
         Deallocate the parameter arrays concerning the nuclei
         """
+        if self.ABORT:
+            return  
         DEBUG_MSG("RESET NUCLEUS")
         parameters.nucleus=[]
         
@@ -203,6 +216,9 @@ class Simulation:
         """
         Run the simulation using the f95Pulsar module
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("EXECUTE PULSAR")
         # When running the full program we need to reset all arrays to None
         # and load all the new parameters
@@ -210,12 +226,15 @@ class Simulation:
 
         #reset_share()
         #reset_operators()
-        control_parameters(pydebug_msg)
+        #control_parameters(pydebug_msg)
+
+        #this is very important because the array in diagonalize are not deallocated automatically
         diagonalize.dealloc()
         
         # No nucleus?
         if not self.sample.nuclei:
-            return
+            WRITE_STRING("There is no nuclei defined! self.ABORTING...")
+            #return
         
         # Settings in case of spinning sideband aliasing
         if self.aliasing:
@@ -229,11 +248,17 @@ class Simulation:
         self.display()
         
         #Execute the simulation
-        if not TEST : compute(pydebug_msg,pywrite_string)
-           
+        if not TEST and not self.ABORT:
+            compute(pydebug_msg,pywrite_string)
+        #to do check possible code errosrs when retruning from compute
+
     #-----------------
     def display(self):
     #-----------------
+        if self.ABORT:
+            return
+        
+        
         if verbose:
             WRITE_STRING("\nSPECTROMETER:")
             WRITE_STRING(  "-------------")
@@ -265,6 +290,9 @@ class Simulation:
         """
         set parameters in the fortran module
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("VALIDATE SIMULATION")
 
         parameters.spectrometerfield = self.field
@@ -286,6 +314,9 @@ class Simulation:
         Change the spectrometer field
         and calculate the corresponding proton frequency
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_FIELD")
         try:
             self.field = abs(evaluate(field))
@@ -301,6 +332,9 @@ class Simulation:
     #----------------------------------------
         """ similar to set_protonfrequency
             kept for backward compatibility """
+        if self.ABORT:
+            return
+        
         self.set_protonfrequency(protonfrequency)
         
     #----------------------------------------
@@ -310,11 +344,14 @@ class Simulation:
         Change the proton frequency
         and calculate the corresponding spectrometer field   
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_PROTONFREQUENCY")
         try:
             self.protonfrequency = abs(evaluate(protonfrequency))
         except:
-            WRITE_STRING("\n\terror in set_proton_frequency: reset to default 400*mhz\n")
+            WRITE_STRING("\n\tERROR in set_proton_frequency: reset to default 400*mhz\n")
             self.protonfrequency = 400*mhz
         self.field = self.protonfrequency/gamma_H
         
@@ -324,6 +361,9 @@ class Simulation:
         """
         Change the spinning speed
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_SPINNINGSPEED")
         self.spinningspeed = abs(evaluate(spinningspeed))
         if self.spinningspeed<1*hz and self.nsb > 0:
@@ -336,6 +376,9 @@ class Simulation:
         """
         Change the spinning angle  
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_SPINNINGANGLE")
         self.spinningangle = abs(evaluate(spinningangle))
         
@@ -345,6 +388,9 @@ class Simulation:
         """
         Change the number of spinning sideband - can be AUTO
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_NSB")
         self.nsb = evaluate(nsb)
         if self.nsb == -999 and self.spinningspeed > 0.1: 
@@ -358,14 +404,15 @@ class Simulation:
                 WRITE_STRING("\n\t*** ERROR *** the 'AUTO' flag in 'set_nsb' can be used only after a nucleus S has been defined")
                 WRITE_STRING("\t (Additionnaly, the sw (using set_sw) and the spinningspeed (using set_spinningspeed) must ")
                 WRITE_STRING("\t  also be defined prior to this calculation)\n")
+                self.ABORT=True
+                
         elif self.nsb == -998 and self.spinningspeed > 0.1: 
             # calculate the maximum number of spinning sidebands for satellite transition
             try:
                 s = parameters.nucleus[0,1]
                 wQ=3.*parameters.quadrupole[0,1]/(2.*s*(2*s-1))
                 width=wQ*(2*s-1.)*1.25
-                self.nsb = int(width/self.spinningspeed/2.)
-                
+                self.nsb = int(width/self.spinningspeed/2.)     
             except:
                 WRITE_STRING("error with FULL calculation")
         else:
@@ -382,6 +429,9 @@ class Simulation:
         """
         Change the number of points
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_NPTS")
         self.npts = abs(evaluate(npts))
         self.npts = int(2**round(log(self.npts+1)/log(2)))
@@ -393,6 +443,9 @@ class Simulation:
         """
         Change the spectral width
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_SW")
         self.sw = abs(abs(evaluate(sw)))
         self.sw = max(self.sw, 100*Hz)
@@ -404,6 +457,9 @@ class Simulation:
         """
         Change the accuracy
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_ACCURACY")
         self.accuracy = abs(evaluate(accuracy))
         self.accuracy = max(min(self.accuracy,parameters.accuracymax),1)
@@ -414,10 +470,13 @@ class Simulation:
         """
         Change the rf integration step
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_RFSTEP")
         self.rfstep = abs(evaluate(rfstep))
         self.rfstep = max(self.rfstep, .1)
-
+        
     #----------------------------
     def set_detect(self, detect):
     #----------------------------
@@ -426,13 +485,17 @@ class Simulation:
         args:
             detect choice: "all", "central", "satellite"
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_DETECT")
         self.nall = max(min(evaluate(detect),2),0)
         try:
             spins = parameters.nucleus[0,1]
             if spins<1 : self.nall = 0
         except:
-            WRITE_STRING("\n\t!!! WARNING: 'set_detect' can be used only after a nucleus S has been defined\n")
+            WRITE_STRING("\n\t!!! ERROR: 'set_detect' can be used only after a nucleus S has been defined\n")
+            self.ABORT=True
     
     #------------------------------
     def set_qfactor(self, qfactor):
@@ -440,6 +503,9 @@ class Simulation:
         """
         Change the probe quality factor  
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_QFACTOR")
         self.qfactor = max(evaluate(qfactor),0.0001)
 
@@ -449,16 +515,19 @@ class Simulation:
         """
         add a spectrum to the collection of spectra  
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("Store Spectrum")
         spec = array(parameters.spec)
         s = self.collection_spectra
         self.collection_spectra.append(spec)
         if data != "undefined":
             self.collection_data.append(data)      #identifier
-            DEBUG_MSG("Stored : "+str(data))
+            DEBUG_MSG("Stored data: "+str(data))
         if label !="":
             self.collection_label=label
-            DEBUG_MSG("Stored : "+label)
+            DEBUG_MSG("Stored label: "+label)
         else:
             self.collection_label="variable index"            
         self.current_spectrum = array(spec)
@@ -474,6 +543,9 @@ class Simulation:
         """
         set a flag for future summation of spectra  
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SUM_SPECTRA "+str(do_sum))
         self.flag_sum=do_sum
                     
@@ -484,8 +556,10 @@ class Simulation:
         Write spectra into a file in various format
         args: filename - name of the output file (default:'pulsar.spe'
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("WRITE_SPECTRA ")
-
         # TODO : implement various format
         n = self.npts
         sw= self.sw
@@ -545,6 +619,7 @@ class Simulation:
 
             except:
                 WRITE_STRING("ERROR in fft")
+                self.ABORT=True
 
             for i in range(len(spec)):
                 line = string.strip(repr(spec[i].imag))+" "+string.strip(repr(spec[i].real))+'\n'
@@ -559,13 +634,12 @@ class Simulation:
             f = open("scratch.tmp","wb")
             f.writelines(lines)
             f.close()
-            return True
         except:    
             DEBUG_MSG("ERROR: When creating file scratch.tmp")
-            return False
+            self.ABORT=True
         
         if (verbose) :
-            WRITE_STRING("\nSaving of spectra data done.")
+            if not self.ABORT : WRITE_STRING("\nSaving of spectra data done.")
         
 
     #-----------------------------------
@@ -574,9 +648,14 @@ class Simulation:
         """
         add a nucleus to the current simulation
         """
-        DEBUG_MSG("ADD NUCLEUS")
+        if self.ABORT:
+            return
+        
+        #DEBUG_MSG("ADD NUCLEUS")
         if not nucleus:
-            WRITE_STRING("\nError in add_nucleus - check the argument of the function")
+            WRITE_ERROR("in add_nucleus - check the argument of the function")
+            self.ABORT=True
+            
         # we add this nucleus to the sample
         self.sample.add_nucleus(nucleus)
         
@@ -586,6 +665,10 @@ class Simulation:
         """
         define the channels
         """
+        print "ok"
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_CHANNEL : "+channel[0])
         # the channel correspond to a Nucleus selection
         try:
@@ -594,72 +677,173 @@ class Simulation:
                 self.I_channel=channel[1]
                 DEBUG_MSG("SET_CHANNEL : "+channel[1])
         except:
-            WRITE_STRING("\nError in set_channel")
-            
+            WRITE_STRING("\nERROR in set_channel")
+            self.ABORT=True
+
     #-----------------------------------------------------
-    def select_nucleus(self,nucleus=None,index=None):
+    def select_S_nucleus(self, nucleus=None):
+    #-----------------------------------------------------
+        """
+            Exactly equivalent to select_nucleus()
+        """    
+        if self.ABORT:
+            return
+
+        self.select_nucleus(nucleus)
+
+    #-----------------------------------------------------
+    def select_I_nucleus(self, nucleus=None):
+    #-----------------------------------------------------
+        """
+            Selection of the coupled nuclei   
+            arg:
+            nucleus : an instance of the nucleus class 
+        """
+        if self.ABORT:
+            return
+
+        print "  "
+        DEBUG_MSG("SELECT_I_NUCLEUS ")
+        DEBUG_MSG("  Number of different nuclei :"+str(len(self.sample.nuclei)))
+
+        #because we do not take into account homonuclear couplings, this number must be greater than 2 to continue
+        #Stop process if there is not enough nucleus
+        if len(self.sample.nuclei)<2:
+            WRITE_ERROR("No nucleus that can be coupled (HETERONUCLEAR) to "+self.S_channel+" have been found! define them before calling set_I_nucleus")
+            self.ABORT=True
+            return
+        
+        #First we have to handle a possible error arising when no observed channels have been defined
+        if not self.S_channel: self.S_channel=self.sample.observed       
+        DEBUG_MSG("  Observed channel :"+self.S_channel)
+
+        
+        #The command 'set_I_nucleus' was given without arguments: This is not allowed    
+        if (nucleus is None or type(nucleus) is not types.InstanceType):
+            WRITE_ERROR("  No argument in set_I_nucleus or the argument is not a nucleus instance  : this is required ")
+            self.ABORT=True
+            return
+  
+        # Ok, if we are here, the command was entered with a Nucleus instance specification
+
+        #check if the S nucleus was already defined
+        if len(parameters.nucleus)<1:
+            WRITE_ERROR("  The definition of the S nucleus must be set before using select_I_nucleus:"+ \
+                        " define the observed S Nucleus, using select_S_nucleus or (select_nucleus)")
+            self.ABORT=True
+            return
+
+        #Now validate the nucleus    
+        index=nucleus.index
+        coupled=nucleus.isotope
+        WRITE_STRING("  Selection of "+coupled+" index "+str(index))
+        if coupled == self.S_channel:
+            WRITE_ERROR("  The selected coupled nucleus can not be on the "+self.S_channel+" channel (only heteronuclear coupling allowed)")
+            self.ABORT=True
+            return
+        else:
+            #ok, it is an observed nuclei
+            DEBUG_MSG("  OK, the selected nucleus can be coupled")
+            #Validation
+            self.sample.validate(observed,index,delta, abundance)   
+        
+    #-----------------------------------------------------
+    def select_nucleus(self, nucleus=None):
     #-----------------------------------------------------
         """
         define the observed nucleus used for the calculation (use only its index)
         arg:
-            nucleus: String
-            index: integer - index start at 0
+            nucleus : an instance of the nucleus class (by default it is the S_channel but
+                      it may be interesting to have a nucleus close in frequency like 51V when studying 23Na
+                    or an integer representing the index of an observed nuclei (index start at 0)
         """
-        DEBUG_MSG("SELECT_NUCLEUS")
+        if self.ABORT:
+            return
 
-        #First we have to handle a possible errors arising when no observed channels have been defined
-        try:
-            essai=self.S_channel
-        except:
-            DEBUG_MSG(self.sample.observed)
-            self.S_channel=self.sample.observed
+        delta=0.
+        abundance=None
         
-        if (nucleus is None) and (index is None):
-            # select_nucleus()
-            #   we assumed that the observing channel in this case
-            #   corresponds to the first set nucleus on the observed nucleus  
-            nucleus=self.S_channel
+        print "  "
+        DEBUG_MSG("SELECT_NUCLEUS ")
+        DEBUG_MSG("  Number of defined and different nuclei :"+str(len(self.sample.nuclei)))
+
+        #Stop process if there is no nucleus
+        if len(self.sample.nuclei)==0:
+            WRITE_ERROR("No nucleus found! define them before calling set_nucleus")
+            self.ABORT=True
+            return
+        
+        #First we have to handle a possible error arising when no observed channels have been defined
+        if not self.S_channel: self.S_channel=self.sample.observed
+                
+        DEBUG_MSG("  Observed channel :"+self.S_channel)
+        
+        #The command 'set_nucleus' was given without arguments: Validation for instance of a single observed nucleus    
+        if (nucleus is None):
             index=0
-            
-        elif type(nucleus)is not types.StringType:
-            # select_nucleus(1)
-            #    The nucleus name was not given - probably only the index
+            observed=self.S_channel
+            WRITE_STRING("  No argument in set_nucleus : the first nucleus in '"+self.S_channel+"' list will be considered ")
+                
+        # Ok, if we are here, the command was entered with an index or a Nucleus instance specification
+        if type(nucleus) is types.IntType:
+            # we specified an index  : in this case it can be only for observed nuclei
             index=nucleus
-            nucleus=self.S_channel
-            
-        elif type(index) is types.IntType :
-            if (nucleus is None):
-                nucleus=self.S_channel
-                
-        else:
-            nucleus=self.S_channel
-            index=0
+            observed=self.S_channel
+            WRITE_STRING("  Selection of "+observed+" index "+str(index))
+            if self.get_numberofnuclei(self.S_channel)==0:
+                WRITE_ERROR("No observed nuclei defined!")
+                self.ABORT=True
+                return
+            if index >= self.get_numberofnuclei(self.S_channel):
+                WRITE_ERROR("This nucleus index does not exist (maximum is "+ \
+                            str(self.get_numberofnuclei(self.S_channel)-1)+ " in the channel: "+ self.S_channel+\
+                            "\n. Check the nucleus definition list!" + \
+                            "\n(Note: Index in list start at 0: if there is two nuclei: first nuclei has index 0 and the second has index 1)")
+                self.ABORT=True
+                return
+        if type(nucleus) is types.InstanceType:
+            # we specified a nucleus instance
+            index=nucleus.index
+            observed=nucleus.isotope
+            WRITE_STRING("  Selection of "+observed+" index "+str(index))
+            if observed == self.S_channel:
+                #ok, it is an observed nuclei
+                DEBUG_MSG("  OK, the selected nucleus can be observed")
 
-        WRITE_STRING("\n\n*Nucleus '"+ nucleus +"' with index : "+str(index)+" has been selected\n" +
-                         "*********************************************************************")
+            else:
+                if observed == self.I_channel:
+                        #well, it is a I nuclei, but this has no sense because it cannot be observed
+                        WRITE_ERROR("Cannot observe nucleus "+observed+ \
+                                    " on the actual observed channel: "+self.S_channel+ \
+                                    ". You may want to change the observed channel using set_channel")
+                        self.ABORT=True
+                        return
+                else:
+                    # there is no I channel
+                    # check if this nucleus is close enougth to S_channel to be observed (even partly).
+                    WRITE_STRING("  Abs. Larmor frequency of the this nucleus : "+str(abs(nucleus.nucleus["larmor"])))
+                    WRITE_STRING("  Frequency of the observed "+self.S_channel+" channel : "+str(isotopes[self.S_channel]["larmor"]))
+                    delta = abs(nucleus.nucleus["larmor"]) - abs(isotopes[self.S_channel]["larmor"])
+                    WRITE_STRING("  Difference : "+str(delta)+ " MHz")
+                    if delta>5:
+                        WRITE_ERROR("  This frequency difference seems too large for taking into account this nucleus. It will not be calculated!")
+                        self.ABORT=True
+                        return
+                    #ok we takes this delta into account
+                    delta=delta*mhz
+                    abundance=isotopes[nucleus.isotope]["abundance"]   #### TO change to take into account possible enrichment
+   
+        DEBUG_MSG("  Observed nuclei index :"+str(index))
+        DEBUG_MSG("  Observed nucleus isotope:"+observed)
+              
+        #Validation
+        self.sample.validate(observed,index,delta, abundance)
 
-        try:
-            if type(nucleus) is types.StringType:
-                #in the case where the nucleus is not the same as the observed channel, we have to correct
-                #the chemical shift to take into account the frequency difference
-                delta = isotopes[nucleus]["larmor"] - isotopes[self.S_channel]["larmor"]
-                delta=delta*mhz   
-                abundance=isotopes[nucleus]["abundance"]
-                
-            #Validation
-            self.sample.validate(nucleus,index,delta, abundance)
-
-            #Read the lb, gb and concentration from the current nucleus
-            self.lb=self.sample.nuclei[nucleus][index].lb
-            self.gb=self.sample.nuclei[nucleus][index].gb
-            self.concentration=self.sample.nuclei[nucleus][index].concentration
+        #Read the lb, gb and concentration from the current nucleus
+        self.lb=self.sample.nuclei[observed][index].lb
+        self.gb=self.sample.nuclei[observed][index].gb
+        self.concentration=self.sample.nuclei[observed][index].concentration
         
-        except KeyError:
-            WRITE_STRING("\n\n*** ERROR *** '"+nucleus+ \
-                  "' was not found in the nucleus list - Check the name and/or the mass number")
-        except:
-            WRITE_STRING("\nError in select_nucleus")
-            
     #-------------------------------------------------------------
     def get_numberofnuclei(self,isotope):
     #-------------------------------------------------------------
@@ -672,13 +856,14 @@ class Simulation:
             get_numberofnuclei("27Al")   # determine the number of 27Al nuclei
             ...
         """
-        DEBUG_MSG("GET NUMBER OF NUCLEI")
-        try:
+        if self.ABORT:
+            return
+
+        if isotope in self.sample.nuclei:  #has_key!
             nb= len(self.sample.nuclei[isotope])
-            if (verbose) : WRITE_STRING("\nNumber of nuclei:"+str(nb))
-        except:
-            WRITE_STRING("\nError in get_numberofnuclei")
-        return nb
+            #if (verbose) : WRITE_STRING("\nNumber of nuclei:"+str(nb)) 
+            return nb
+        else: return 0
     
     #------------------------
     def set_idealpulse(self):
@@ -686,6 +871,9 @@ class Simulation:
         """
         The pulse is considered as an ideal pulse
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_IDEAL")
         self.sequence.idealpulse()
         
@@ -701,6 +889,9 @@ class Simulation:
             offsetS, offsetI - offset respectively on spin S and I
             phaseS, phaseI - pulse phase instruction resp. on S and I
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SET_PULSE")
         self.sequence.pulse(length,powerS,offsetS,phaseS,powerI,offsetI,phaseI)
 
@@ -714,6 +905,9 @@ class Simulation:
             length - delay duration
             decouple - decoupling flag (default=false)
         """
+        if self.ABORT:
+            return
+
         DEBUG_MSG("SET_DELAY")
         self.sequence.delay(length,decouple)
 
@@ -728,60 +922,429 @@ class Simulation:
             dp - coherence transfer jump (999 : no selection)
             nbphases - number of phases (1 by default : no phase cycling)
         """
+        if self.ABORT:
+            return
+        
         DEBUG_MSG("SELECT_COHERENCE")
         self.sequence.coherence(dp,nbphases)
+
+    # set ctp------------------
+    def set_pathway(self,*list):
+    #--------------------------
+        """ create one CTP(s) from a list of value """
+        
+        if self.ABORT:
+            return
+        
+        self.nofpulses=len(parameters.pulse)
+        
+        if (verbose) :
+            WRITE_STRING( "\nADDING A COHERENCE TRANSFER PATHWAY:\n"\
+                          + "------------------------------------")
+
+        if len(list)!= self.nofpulses+1:
+            WRITE_ERROR( "The length of the submitted list of coherence is not correct." \
+                          +"\n       It must be the (number of pulse) -> "+str(self.nofpulses)+"+1")
+            self.ABORT=True
+            
+        if list[0]!=0 or list[len(list)-1]!=-1:   
+            WRITE_ERROR( "List must start with 0 end ending with -1")
+            self.ABORT=True
+           
+        self.ctpall.append(list)
+        parameters.ctp=self.ctpall
+        self.print_pathways()
+
+    #------------------------        
+    def print_pathways(self):
+    #------------------------
+        """ print selected coherence transfers pathways """
+        if self.ABORT:
+            return
+        
+        
+        i=1
+        self.ctpall.sort()
+        #create a dictionnary (to reference easily the various coherence)
+        self.ctpdict={}
+        for c in self.ctpall:
+            self.ctpdict[i]=c
+            strg = str(int(i)) + ":  {"  
+            for j in range(size(self.ctpall,1)-1):
+                item=c[j]
+                if abs(item)<=999:
+                    strg= strg + str(int(item)).rjust(3)+" ->"
+                else:
+                    strg= strg + "("+str(int(item-10000)).rjust(3)+","+str(-int(item-10000)).ljust(3)+") ->"
+            strg=strg + " -1 }"
+            if (verbose) : WRITE_STRING(strg)
+            i=i+1
+
+            
+    #------------------------       
+    def check_pathways(self):
+    #------------------------
+        """ check coherence transfers pathways """
+        if self.ABORT:
+            return
+        
+        
+        if (verbose) : WRITE_STRING( "\nLIST OF POSSIBLE COHERENCE TRANSFER PATHWAYS (CTP):")
+
+        self.nofpulses=len(parameters.pulse)
+         
+        if (self.nofpulses==1): 
+            WRITE_STRING( "single pulse, no CTP selection possible")
+            return
+             
+        self.ns=2*parameters.nucleus[0,1]  #maximum order
+        pend=0
+        ctp=range(self.nofpulses+1)
+        self.ctpall=[]
+        self.searchp(1,pend,ctp)
+        
+        if len(self.ctpall)==0 :
+            WRITE_STRING("ERROR: ")
+            WRITE_STRING( "No valid coherence transfer has been found:")
+            WRITE_STRING( "  Check your coherence transfer settings!")
+            WRITE_STRING( "   e.g., sum("+chr(127)+"p) must be " )
+            WRITE_STRING( "         -1 for the observed spin S and 0 for spin I" )
+            self.ABORT=true
+
+        # store the result
+        nctp=size(self.ctpall,0)
+        self.ctpall.sort()
+        if nctp!=pow(2*self.ns+1,self.nofpulses-1):
+            if (verbose) : WRITE_STRING( "number of CTPs: " + nctp)
+            self.print_ctp()
+            parameters.ctp=self.ctpall
+        else:
+            if (verbose) : WRITE_STRING(" all allowed") 
+            #TODO: check some other situation where it is not needed to
+            #      make the calculation of all CTPs 
+
+          
+    # compress coherence transfers----------------------------------------------------        
+    def compress_ctp(self):
+    #------------------------------------------------------------------------------
+        #global nofpulses, ns, ctpall
+        if self.ABORT:
+            return
+        
+        
+        if (verbose) : WRITE_STRING( "\nREDUCING NUMBER OF CTP :")
+
+        l=len(self.ctpall)
+        if l==0 :
+            WRITE_STRING( "ERROR: ")
+            WRITE_STRING( "No valid coherence transfer has been found:")
+            self.ABORT=True
+
+        #look for pathway where two symmetrical coherences are found 
+        for c1 in self.ctpall:
+            #print "check ",c1  
+            for c2 in self.ctpall:
+                if c2!=c1:
+                    #print "compare with ",c2     
+                    for i in range(1,size(self.ctpall,1)-1):  
+                        #look each items except the first one (always 0) and the last (-1).  
+                        store=c2
+                        store[i]=-store[i]
+                        if store==c1:
+                            #this two pathway are identical except for one element which is symetric
+                            #we can reduce it to only one (we add 10000 to says that two symetric element
+                            #must be retained)
+                            self.ctpall.remove(c2)
+                            self.ctpall.remove(c1)
+                            store[i]=abs(store[i])+10000
+                            self.ctpall.append(store)
+                            #WRITE_STRING( store )
+                        break
+        if len(self.ctpall)== l :
+            if (verbose) : WRITE_STRING( "No reduction possible." )   
+        else:
+            parameters.ctp=self.ctpall
+            self.print_ctp()
+        
+    # searchp----------------------------------------------------------------------
+    def searchp(self,nc,pend,ctpi):
+    #------------------------------------------------------------------------------
+        """
+        recursive function
+        used by check_ctp
+        """  
+        #global nofpulses, ns, ctpall
+        if self.ABORT:
+            return
+        
+        ctpi[nc-1]=pend
+        if nc==(self.nofpulses+1):  
+            if pend==-1 and nc==(self.nofpulses+1):
+                c=[]
+                for i in ctpi:
+                    c.append(i)
+                self.ctpall.append(c)
+            return
+        else:  
+            dp=parameters.coher[nc-1,1]
+            nbphases=parameters.coher[nc-1,2]
+            if dp==999 :   #all jumps allowed
+                dp=1 
+                nbphases=1
+            for n in range(-int(3*self.ns),int(3*self.ns)):
+                p=pend+dp+nbphases*n
+                if p<=self.ns and p>=-self.ns :
+                    self.searchp(nc+1, p,ctpi)
+             
+    # remove_ctp-------------------------------------------------------------------
+    def remove_ctp(self,index):
+    #------------------------------------------------------------------------------
+        """ remove_ctp : to remove one or more ctp in the list
+            arg: index is a scalar
+                 or a list in the format (index1, index2...)"""
+        if self.ABORT:
+            return
+        
+        #global ctpdict, ctpall
+        if (verbose) : WRITE_STRING( "\nREMOVING CTP"+str(index))
+        # here the dictionnary is useful
+        #(because we cannot know easily the order of the list element)
+        try:
+            for i in index:    
+                del self.ctpdict[i]
+        except:
+            try:
+                del self.ctpdict[index]  #if list is a single number     
+            except:
+                WRITE_STRING( "ERROR in the remove_ctp command")
+                WRITE_STRING( self.remove_ctp.__doc__)
+        self.ctpall=ctpdict.values()
+        parameters.ctp=self.ctpall
+        self.print_ctp()
+
+    # DIPOLAR COUPLINGS
+    #====================
+          
+    # dipole_from_distance-------------------
+    def dipole_from_distance(self,distance,f1,f2):
+    #----------------------------------------
+        """
+        'Compute dipolar coupling from distances' 
+        args:
+            distance - distances between nucleus
+            f1, f2 - larmor frequency of the two nuclei 
+        """
+        if self.ABORT:
+            return
+
+        DEBUG_MSG("dipole from distance")
+        field = parameters.spectrometerfield
+        h = 6.6260693e-34
+        mu0 = 4*pi*1.0e-7
+        f1 = f1/field  #conversion en gamma
+        f2 = f2/field
+        dipolar = abs(f1*f2*mu0*h/(distance*1.0e-10)**3/4/pi)
+        return dipolar
+     
+    # indirect j coupling --------------------------------------------------------------
+    def set_indirect(self,index,second,j = 0,delta = 0,eta = 0,alpha = 0,beta = 0,gamma = 0):
+    #-----------------------------------------------------------------------------------
+        """
+        set_indirect -- 
+        'Set the indirect J coupling between a pair of nucleus'
+        args:
+            index - index of the first nucleus (defined previously by set_nucleus)
+                    Required to be one.
+            second - index of the second nucleus (defined previously by set_nucleus)
+            j - J coupling value
+            delta - ansotropy of J
+            alpha, beta, gamma - euler angles with respect to the molecular frame
+        """
+        if self.ABORT:
+            return
+
+        DEBUG_MSG("Set Indirect")
+        if parameters.nucleus == None: 
+            WRITE_STRING("\n*set_indirect*\nERROR: No nucleus were defined yet. Cannot set indirect j coupling'!\n")
+            WRITE_STRING(set_indirect.__doc__)
+            exit()
+        else:
+            if index != 1: 
+                WRITE_STRING("\n*set_indirect*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
+                WRITE_STRING("It has been automatically changed.")
+                index = 1
+            if second == 1:   
+                WRITE_STRING("\n*set_indirect*\nWARNING: the index of the second nucleus is required to be different of the first index!")
+                WRITE_STRING("It has been automatically changed to 'index+1'.")
+                second = index + 1
+            if second > len(parameters.nucleus): 
+                WRITE_STRING("\n*set_indirect*\nERROR: the second index does not correspond to an existing nucleus!\n")
+                WRITE_STRING(set_indirect.__doc__)
+                exit()
+        j = evaluate(j)
+        delta = evaluate(delta)
+        eta = evaluate(eta)
+        alpha = evaluate(alpha)
+        beta = evaluate(beta) 
+        gamma = evaluate(gamma)  
+        if parameters.indirect==None:
+            if (verbose) : WRITE_STRING("\nindirect J coupling:")
+            ar=[[index,second,j,delta,eta,alpha,beta,gamma]]   
+        else:
+            size=len(parameters.indirect) 
+            ar=[[0,0,0,0,0,0,0,0] for i in range(size+1)]
+            i=0
+            while i < size :
+                ar[i]=[int(parameters.indirect[i,0]),int(parameters.indirect[i,1]),parameters.indirect[i,2], parameters.indirect[i,3], parameters.indirect[i,4],parameters.indirect[i,5],parameters.indirect[i,6],parameters.indirect[i,7]]  #copy of the previous elements
+                i=i+1
+            ar[size]=[index,second,j,delta,eta,alpha,beta,gamma]       
+        parameters.indirect=ar                                          #allocate or reallocate and initialize       
+        size=len(parameters.indirect)
+        i=size-1
+        if (verbose) :
+            WRITE_STRING("\tIndirect J coupling ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,2])+" Hz")
+            if parameters.indirect[i,3]!=0 : WRITE_STRING("\tdelta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,3])+" Hz")
+            if parameters.indirect[i,3]!=0 : WRITE_STRING("\teta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,4]))
+            if parameters.indirect[i,3]!=0 : WRITE_STRING("\teuler J ("+str(index)+","+str(second)+"): ["+ str(parameters.indirect[i,5])+","+str(parameters.indirect[i,6])+","+str(parameters.indirect[i,7])+"]")     
+
+    # direct dipolar coupling -----------------------------------------
+    def set_dipole(self,S,I,dip=0,distance=0,alpha=0,beta=0,gamma=0):
+    #------------------------------------------------------------------
+        """
+        -- set_dipole -- 
+        'Set the direct dipole coupling between a pair of nucleus'
+        args:
+##            index - index of the first nucleus (defined previously by set_nucleus)
+##                    Required to be one.
+##            second - index of the second nucleus (defined previously by set_nucleus)
+
+            dip - dipolar coupling value
+            distances - distance between nucleus in angstrom (used only if d=0)
+            alpha, beta, gamma - euler angles with respect to the molecular frame
+        """
+        if self.ABORT:
+            return
+
+        DEBUG_MSG("Set Dipole")
+        print parameters.nucleus
+        if parameters.nucleus==None: 
+            WRITE_STRING("\n*set_dipole*\nERROR: No observed nucleus were defined yet. Cannot set dipole coupling'!\n")
+            WRITE_STRING(set_dipole.__doc__)
+            exit()
+        else:
+            if index!=1: 
+                WRITE_STRING("\n*set_dipole*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
+                WRITE_STRING("It has been automatically changed.")
+                index=1
+            if second==1:   
+                WRITE_STRING("\n*set_dipole*\nWARNING: the index of the second nucleus is required to be different of the first index!")
+                WRITE_STRING("It has been automatically changed to 'index+1'.")
+                second=index+1
+            if second>len(parameters.nucleus): 
+                WRITE_STRING("\n*set_dipole*\nERROR: the second index does not correspond to an existing nucleus!\n")
+                WRITE_STRING(set_dipole.__doc__)
+                exit()
+        dip=evaluate(dip)
+        distance=evaluate(distance)
+        if (distance!=0) and (dip==0) : dip=dipole_from_distance(distance,parameters.nucleus[index-1,2],parameters.nucleus[second-1,2])
+        alpha=evaluate(alpha)
+        beta=evaluate(beta) 
+        gamma=evaluate(gamma)
+        if parameters.dipole==None:
+            if (verbose) : WRITE_STRING("\ndipolar coupling:")
+            ar=[[index,second,dip,distance,alpha,beta,gamma]]   
+        else:
+            size=len(parameters.dipole) 
+            ar=[[0,0,0,0,0,0,0] for i in range(size+1)]
+            #copy of the previous elements
+            i=0
+            while i < size :
+                ar[i]=[int(parameters.dipole[i,0]),int(parameters.dipole[i,1]),parameters.dipole[i,2], parameters.dipole[i,3], parameters.dipole[i,4],parameters.dipole[i,5],parameters.dipole[i,6]] 
+                i=i+1
+            ar[size]=[index,second,dip,distance,alpha,beta,gamma]       
+        parameters.dipole=ar                                          #allocate or reallocate and initialize       
+         
+        size=len(parameters.dipole)
+        i=size-1
+        if (verbose) : WRITE_STRING("\tdipolar coupling ("+str(index)+","+str(second)+"): "+str(parameters.dipole[i,2])+" Hz")
+        if (verbose) : WRITE_STRING("\tpolar angles [alpha,beta] ("+str(index)+","+str(second)+"): ["+ str(parameters.dipole[i,4])+","+str(parameters.dipole[i,5])+","+str(parameters.dipole[i,6])+"]")     
        
 #==============================================================================
 class Sample:
 #==============================================================================
     """
     A class to handle the parameters relative to a set of nucleus for one sample
+      * A sample contain list of nuclei
+      * A list of nuclei corresponds to one type of nuclei (key: ex. 27Al, etc) and may contains several nucleus (instances of class nucleus).
+      (for the moment this class stay private)
     """
     #------------------    
     def __init__(self):
     #------------------    
         """
-        initialize the class with a zero number of nucleus
+        initialize the class sample with a zero number of nucleus
         """
-        DEBUG_MSG("Sample INIT")
-        self.nuclei = {}
-        self.observed = None    #no observed nucleus defined (bydefault it will be the first one define)
+        DEBUG_MSG("INIT Sample")
+        self.nuclei = {}        #initialize to no nucleus
+        self.observed = None    #no observed nucleus defined (by default it will be the first one that will be defined)
         
     #---------------------------------    
     def add_nucleus(self, newnucleus):
     #---------------------------------   
         """
-        add a nucleus to the sample
+            add a nucleus (instance of class nucleus) to the sample
+            args:
+            - newnucleus: a nucleus instance
         """
-        DEBUG_MSG("Sample ADD_NUCLEUS")
-        key=newnucleus.isotope # the name of the isotope become the key
-        if not self.nuclei:
-            # if there is no nuclei already defined
-            self.observed=key   # in case we need to know what was the first nuclei entered in this dictionary
-            DEBUG_MSG("observed default"+self.observed)
+        
+        # the name of the isotope become the key
+        key=newnucleus.isotope
+        DEBUG_MSG("ADD NUCLEUS " + key + " to Sample")
+        
+        # if there is no nuclei already defined and in case we need to know what was the first nuclei entered in this dictionary
+        if not self.nuclei: self.observed=key
+        
+        # if this key does not exist yet, create a new list a nuclei for this key
+        if not self.nuclei.has_key(key): self.nuclei[key] = []
 
-        if not self.nuclei.has_key(key):
-            self.nuclei[key] = []  
+        # add the nucleus to the list corresponding to this key (we have also to give it some index: useful for select_nucleus)
+        newnucleus.index=len(self.nuclei[key])
         self.nuclei[key].append(newnucleus)
-        DEBUG_MSG(" -- add_nucleus "+key)
         
     #---------------------------------------------------    
     def validate(self,key,index=0,delta=0, abundance=1):
     #---------------------------------------------------    
-        """ validation of one nucleus """
-        if not self.nuclei: return 
+        """
+            Validation of one nucleus
+            args:
+            - key: the isotope string
+            - index: the index of the nucleus in the list corresponding to the key
+            - delta: to handle different nucleus with close larmor frequency  
+            - abundance: The abundance of course with respect to the natural abundance
+        """
+        DEBUG_MSG("VALIDATE a nucleus in the sample")
+        
+        # if there is not nuclei, return
+        if not self.nuclei: return
+
+        # if such key does not exist, return
         if not self.nuclei.has_key(key): return
-        #extract the nuclei with the key and the index indicated 
+        
+        #extract the nucleus instance with the key and the index indicated 
         nucleus=self.nuclei[key][index]                  
         nucleus.validate(delta, abundance)
         
     #----------------------    
     def validate_all(self):
     #----------------------    
-        """ validation of all nuclei in the sample """
-        DEBUG_MSG("Sample VALIDATE ALL")
-        if self.nuclei:
+        """
+            Validation of all nuclei in the sample
+            (I don't know if this can be useful)
+        """
+        DEBUG_MSG("VALIDATE ALL Nuclei in the sample")
 
+        # if there is some nuclei in the sample, validate all in sequence
+        if self.nuclei:
             nuclei=[]
             for key,nuclei in self.nuclei.items():
                 for nucleus in nuclei:
@@ -798,54 +1361,72 @@ class Nucleus:
     def __init__(self,isotope = "1H"):
     #---------------------------------    
         """
-        set default parameters
-          - default isotope = '1H'
+            set default parameters
+            arg:
+            - isotope = '1H'
         """
-        DEBUG_MSG("Nucleus INIT")
+        DEBUG_MSG("INIT Nucleus "+isotope)
         self.isotope = isotope
+
         self.nucleus=None
         try:
-
-            self.nucleus = isotopes[isotope]      
-            self.spin = self.nucleus["spin"]
-            self.larmor = abs(self.nucleus["larmor"]) 
-            self.name = self.nucleus["name"]
-            self.quadmoment = self.nucleus["quadrupole"]
-            self.abundance = self.nucleus["abundance"]
-            self.relative = self.nucleus["relative"]
-            self.absolute = self.nucleus["absolute"]
-            
-            self.set_chemicalshift()
-            self.set_quadrupole()
-            self.set_relaxation()
-            self.lb=0.01
-            self.gb=0.
-            self.concentration=1.
-            
+            #read from peiodictable
+            self.nucleus = isotopes[isotope]
         except KeyError:
-            WRITE_STRING("*** ERROR *** '"+isotope+ \
-                  "' was not found in the nucleus list - Check the name and/or the mass number")
-        except:
-            WRITE_STRING("*** ERROR *** Error in nucleus INIT")
-      
-    #-----------------------------------    
-    def validate(self,delta, abundance):
-    #-----------------------------------     
-        """
-        set parameters in the fortran module
-        """
-        DEBUG_MSG("Nucleus VALIDATE")
-        if not self.nucleus:
+            WRITE_ERROR(isotope+" was not found in the nucleus list - Check the name and/or the mass number")
             return
+        
+            #extract the known parameters
+##            self.spin = self.nucleus["spin"]
+##            self.larmor = abs(self.nucleus["larmor"]) 
+##            self.name = self.nucleus["name"]
+##            self.quadmoment = self.nucleus["quadrupole"]
+##            self.abundance = self.nucleus["abundance"]
+##            self.relative = self.nucleus["relative"]
+##            self.absolute = self.nucleus["absolute"]
+
+            #init some initial values for user parameters
+        self.set_chemicalshift()
+        self.set_quadrupole()
+        self.set_relaxation()
+        self.lb=0.01
+        self.gb=0.
+        self.concentration=1.
+            
+        #except: WRITE_ERROR("Something is wrong with the INIT Nucleus procedure!")
+      
+    #----------------------------------------    
+    def validate(self,delta, abundance=None):
+    #----------------------------------------     
+        """
+            Validate parameters in the fortran module
+            args:
+            - delta
+            - abundance
+        """
+        DEBUG_MSG("VALIDATE Nucleus")
+
+         #No nucleus to validate?
+        if not self.nucleus:
+            WRITE_ERROR("problemo!")
+            return
+
+        spin = self.nucleus["spin"]
+        larmor = abs(self.nucleus["larmor"]) 
+        name = self.nucleus["name"]
+        quadmoment = self.nucleus["quadrupole"]
+        if abundance is None: abundance = self.nucleus["abundance"]
+        relative = self.nucleus["relative"]
+        absolute = self.nucleus["absolute"]
+
 
         if parameters.nucleus == None:
             # if the 'parameters.nucleus' doesn't exist
             # create the temporary 'ar' array with a  single line
             #----------------------------------------------------
             self.index = 1
-            ar = [[self.index,self.spin,self.larmor*parameters.protonfrequency/100.,abundance]]   
-                            #conversion made to actual larmor frequency
-            
+            ar = [[self.index,spin,larmor*parameters.protonfrequency/100.,abundance]]   
+                            #conversion made to actual larmor frequency          
         else:  
             # the 'parameters.nucleus' array exist already
             # then copy the existing 'parameters.nucleus' array into the temporary 'ar' array
@@ -859,7 +1440,7 @@ class Nucleus:
             # and add a new line 
             #-------------------
             self.index = nofnuclei+1
-            ar[nofnuclei] = [self.index,self.spin,self.larmor*parameters.protonfrequency/100.,abundance]      
+            ar[nofnuclei] = [self.index,spin,larmor*parameters.protonfrequency/100.,abundance]      
                             #conversion made to actual larmor frequency
             
         # allocate or reallocate and initialize the 'parameters.nucleus' array with the 'ar' array
@@ -886,7 +1467,9 @@ class Nucleus:
             i = 0
             size = len(parameters.chemicalshift) 
             while i < size :
-                ar[i] = [int(parameters.chemicalshift[i,0]),parameters.chemicalshift[i,1], parameters.chemicalshift[i,2], parameters.chemicalshift[i,3],parameters.chemicalshift[i,4],parameters.chemicalshift[i,5],parameters.chemicalshift[i,6]]  
+                ar[i] = [int(parameters.chemicalshift[i,0]),parameters.chemicalshift[i,1], \
+                         parameters.chemicalshift[i,2], parameters.chemicalshift[i,3], \
+                         parameters.chemicalshift[i,4],parameters.chemicalshift[i,5],parameters.chemicalshift[i,6]]  
                 i = i+1
             # replace the line of the given index with the new one 
             ar[self.index-1] = [self.index,iso,csa,self.etacsa,self.alphacsa,self.betacsa,self.gammacsa]       
@@ -902,7 +1485,8 @@ class Nucleus:
             i = 0
             size = len(parameters.quadrupole) 
             while i < size :
-                ar[i] = [int(parameters.quadrupole[i,0]),parameters.quadrupole[i,1], parameters.quadrupole[i,2], parameters.quadrupole[i,3],parameters.quadrupole[i,4],parameters.quadrupole[i,5]]  
+                ar[i] = [int(parameters.quadrupole[i,0]),parameters.quadrupole[i,1], parameters.quadrupole[i,2], \
+                         parameters.quadrupole[i,3],parameters.quadrupole[i,4],parameters.quadrupole[i,5]]  
                 i = i+1
             ar[self.index-1] = [self.index,self.cq,self.etaq,self.alphaq,self.betaq,self.gammaq]       
         parameters.quadrupole = ar                                          #allocate or reallocate and initialize       
@@ -926,7 +1510,7 @@ class Nucleus:
         if verbose:
             #Display the current parameters
             #-------------------------------
-            WRITE_STRING("\nNUCLEUS: "+self.name)
+            WRITE_STRING("\nNUCLEUS: "+name)
             WRITE_STRING(  "------------")
             if self.index == 1 : WRITE_STRING("\t-This is the observed nucleus")
             if self.index == 2 : WRITE_STRING("\t-This is the excited but non observed nucleus I \n\t-only ONE excited nucleus in this version-")  
@@ -962,13 +1546,13 @@ class Nucleus:
     def set_chemicalshift(self, iso=0, csa = 0, eta = 0,alpha = 0,beta = 0,gamma = 0):
     #---------------------------------------------------------------------------------
         """
-        Set the chemical shift of a given nucleus
-        args:
-            index - index of the nucleus (defined previously by set_nucleus)
-            iso - isotropic chemical shift
-            csa - chemical shift anisotropy
-            eta - assymetry of the csa
-            alpha, beta, gamma - euler angles describing the orientation 
+            Set the chemical shift of a given nucleus
+            args:
+            - index - index of the nucleus (defined previously by set_nucleus)
+            - iso - isotropic chemical shift
+            - csa - chemical shift anisotropy
+            - eta - assymetry of the csa
+            - alpha, beta, gamma - euler angles describing the orientation 
                                  with respect to the molecular frame
         """
         DEBUG_MSG("Nucleus SET CHEMICAL SHIFT")
@@ -983,10 +1567,10 @@ class Nucleus:
     def set_relaxation(self,t2 = 1.0e+30):
     #------------------------------------
         """
-        Set the T2 of a given nucleus
-        args:
-           index - index of the nucleus (defined previously by set_nucleus)
-           t2 - T2 relaxation time 
+            Set the T2 of a given nucleus
+            args:
+            - index : index of the nucleus (defined previously by set_nucleus)
+            - t2 : T2 relaxation time 
         """
         DEBUG_MSG("Nucleus SET RELAXATION")
         self.t2 = evaluate(t2)
@@ -995,12 +1579,12 @@ class Nucleus:
     def set_quadrupole(self,cq = 0,eta = 0,alpha = 0,beta = 0,gamma = 0):
     #--------------------------------------------------------------------
         """
-        Set the quadrupolar parameters of a given nucleus
-        args:
-            index - index of the nucleus (defined previously by set_nucleus)
-            cq - quadrupolar coupling constant in Hz
-            eta - assymetry of the quadrupolar interaction tensor
-            alpha, beta, gamma - euler angles describing the orientation 
+            Set the quadrupolar parameters of a given nucleus
+            args:
+            - index - index of the nucleus (defined previously by set_nucleus)
+            - cq - quadrupolar coupling constant in Hz
+            - eta - assymetry of the quadrupolar interaction tensor
+            - alpha, beta, gamma - euler angles describing the orientation 
                                  with respect to the molecular frame
         """
         DEBUG_MSG("Nucleus SET QUADRUPOLE")
@@ -1012,7 +1596,7 @@ class Nucleus:
         self.alphaq = evaluate(alpha)
         self.betaq = evaluate(beta)
         self.gammaq = evaluate(gamma)     
-        if self.spin<1: 
+        if self.nucleus["spin"]<1: 
             #if the spin is non quadrupolar
             self.cq = 0.0  
             self.etaq = 0.0
@@ -1024,9 +1608,9 @@ class Nucleus:
     def set_lb(self,lb = 0.01):
     #--------------------------
         """
-        Set the LB of a given nucleus
-        args:
-           lb - broadening (lorenzian)
+            Set the LB of a given nucleus
+            args:
+            -lb - broadening (lorenzian)
         """
         DEBUG_MSG("Nucleus SET LB")
         self.lb = evaluate(lb)
@@ -1035,9 +1619,9 @@ class Nucleus:
     def set_gb(self,gb = 0.0):
     #-------------------------
         """
-        Set the GB of a given nucleus
-        args:
-           gb - broadening (gaussian)
+            Set the GB of a given nucleus
+            args:
+            - gb - broadening (gaussian)
         """
         DEBUG_MSG("Nucleus SET GB")
         self.gb = evaluate(gb)
@@ -1188,314 +1772,179 @@ class PulseSequence:
             ar[nofpulses-1]=[nofpulses,dp,nbphases]       
         parameters.coher=ar          # allocate or reallocate and initialize       
         if dp!=999:
-            if (verbose) : WRITE_STRING( "coherence selection : Number of phases N="+str(nbphases)+", Required "+chr(127)+"p="+str(dp))  
+            if (verbose) : pass #WRITE_STRING("coherence selection : Number of phases N="+str(nbphases)+", Required "+chr(127)+"p="+str(dp))  
         if nbphases==1:
-            if (verbose) : WRITE_STRING( "no coherence selection")
+            if (verbose) : pass #WRITE_STRING("no coherence selection")
 
-    # check coherence transfers        
-    def check_ctp(self):
-    #---------------
-        #global nofpulses, ns, ctpall
-        
-        if (verbose) : WRITE_STRING( "\nLIST OF POSSIBLE COHERENCE TRANSFER PATHWAYS (CTP):")
+##    # check coherence transfers        
+##    def check_ctp(self):
+##    #---------------
+##        #global nofpulses, ns, ctpall
+##        
+##        if (verbose) : WRITE_STRING( "\nLIST OF POSSIBLE COHERENCE TRANSFER PATHWAYS (CTP):")
+##
+##        self.nofpulses=len(parameters.pulse)
+##         
+##        if (self.nofpulses==1): 
+##            WRITE_STRING( "single pulse, no CTP selection possible")
+##            return
+##             
+##        self.ns=2*parameters.nucleus[0,1]  #maximum order
+##        pend=0
+##        ctp=range(self.nofpulses+1)
+##        self.ctpall=[]
+##        self.searchp(1,pend,ctp)
+##        
+##        if len(self.ctpall)==0 :
+##            WRITE_STRING("ERROR: ")
+##            WRITE_STRING( "No valid coherence transfer has been found:")
+##            WRITE_STRING( "  Check your coherence transfer settings!")
+##            WRITE_STRING( "   e.g., sum("+chr(127)+"p) must be " )
+##            WRITE_STRING( "         -1 for the observed spin S and 0 for spin I" )
+##            exit()
+##
+##        # store the result
+##        nctp=size(self.ctpall,0)
+##        self.ctpall.sort()
+##        if nctp!=pow(2*self.ns+1,self.nofpulses-1):
+##            if (verbose) : WRITE_STRING( "number of CTPs: " + nctp)
+##            self.print_ctp()
+##            parameters.ctp=self.ctpall
+##        else:
+##            if (verbose) : WRITE_STRING(" all allowed") 
+##            #TODO: check some other situation where it is not needed to
+##            #      make the calculation of all CTPs 
+##
+##    # print selected coherence transfers        
+##    def print_ctp(self):
+##    #---------------
+##        #global ctpall, ctpdict
+##        i=1
+##        self.ctpall.sort()
+##        #create a dictionnary (to reference esaly the various coherence)
+##        self.ctpdict={}
+##        for c in self.ctpall:
+##            self.ctpdict[i]=c
+##            strg = str(int(i)) + ":  {"  
+##            for j in range(size(self.ctpall,1)-1):
+##                item=c[j]
+##                if abs(item)<=999:
+##                    strg= strg + str(int(item)).rjust(3)+" ->"
+##                else:
+##                    strg= strg + "("+str(int(item-10000)).rjust(3)+","+str(-int(item-10000)).ljust(3)+") ->"
+##            strg=strg + " -1 }"
+##            if (verbose) : WRITE_STRING(strg)
+##            i=i+1
+##          
+##    # compress coherence transfers----------------------------------------------------        
+##    def compress_ctp(self):
+##    #------------------------------------------------------------------------------
+##        #global nofpulses, ns, ctpall
+##        
+##        if (verbose) : WRITE_STRING( "\nREDUCING NUMBER OF CTP :")
+##
+##        l=len(self.ctpall)
+##        if l==0 :
+##            WRITE_STRING( "ERROR: ")
+##            WRITE_STRING( "No valid coherence transfer has been found:")
+##            exit()
+##
+##        #look for pathway where two symmetrical coherences are found 
+##        for c1 in self.ctpall:
+##            #print "check ",c1  
+##            for c2 in self.ctpall:
+##                if c2!=c1:
+##                    #print "compare with ",c2     
+##                    for i in range(1,size(self.ctpall,1)-1):  
+##                        #look each items except the first one (always 0) and the last (-1).  
+##                        store=c2
+##                        store[i]=-store[i]
+##                        if store==c1:
+##                            #this two pathway are identical except for one element which is symetric
+##                            #we can reduce it to only one (we add 10000 to says that two symetric element
+##                            #must be retained)
+##                            self.ctpall.remove(c2)
+##                            self.ctpall.remove(c1)
+##                            store[i]=abs(store[i])+10000
+##                            self.ctpall.append(store)
+##                            #WRITE_STRING( store )
+##                        break
+##        if len(self.ctpall)== l :
+##            if (verbose) : WRITE_STRING( "No reduction possible." )   
+##        else:
+##            parameters.ctp=self.ctpall
+##            self.print_ctp()
+##        
+##    # searchp----------------------------------------------------------------------
+##    def searchp(self,nc,pend,ctpi):
+##    #------------------------------------------------------------------------------
+##        """
+##        recursive function
+##        used by check_ctp
+##        """  
+##        #global nofpulses, ns, ctpall
+##        ctpi[nc-1]=pend
+##        if nc==(self.nofpulses+1):  
+##            if pend==-1 and nc==(self.nofpulses+1):
+##                c=[]
+##                for i in ctpi:
+##                    c.append(i)
+##                self.ctpall.append(c)
+##            return
+##        else:  
+##            dp=parameters.coher[nc-1,1]
+##            nbphases=parameters.coher[nc-1,2]
+##            if dp==999 :   #all jumps allowed
+##                dp=1 
+##                nbphases=1
+##            for n in range(-int(3*self.ns),int(3*self.ns)):
+##                p=pend+dp+nbphases*n
+##                if p<=self.ns and p>=-self.ns :
+##                    self.searchp(nc+1, p,ctpi)
+##             
+##    # remove_ctp-------------------------------------------------------------------
+##    def remove_ctp(self,index):
+##    #------------------------------------------------------------------------------
+##        """ remove_ctp : to remove one or more ctp in the list
+##            arg: index is a scalar
+##                 or a list in the format (index1, index2...)"""
+##        #global ctpdict, ctpall
+##        if (verbose) : WRITE_STRING( "\nREMOVING CTP"+str(index))
+##        # here the dictionnary is useful
+##        #(because we cannot know easily the order of the list element)
+##        try:
+##            for i in index:    
+##                del self.ctpdict[i]
+##        except:
+##            try:
+##                del self.ctpdict[index]  #if list is a single number     
+##            except:
+##                WRITE_STRING( "ERROR in the remove_ctp command")
+##                WRITE_STRING( self.remove_ctp.__doc__)
+##        self.ctpall=ctpdict.values()
+##        parameters.ctp=self.ctpall
+##        self.print_ctp()
+##
+##    # set ctp----------------------------------------------------------------------
+##    def set_ctp(self,list):
+##    #------------------------------------------------------------------------------
+##        """ create one CTP(s) from a list of value """
+##        #global nofpulses, ns, ctpall
+##        if (verbose) : WRITE_STRING( "\nADDING A COHERENCE TRANSFER PATHWAY: ")
+##        if len(list)!= self.nofpulses+1:
+##            WRITE_STRING( "ERROR: len of the list is not correct.")
+##            WRITE_STRING( "Must be number of pulse+1")
+##            exit()
+##        if list[0]!=0 and list[self.nofpulses]!=-1:   
+##            WRITE_STRING( "ERROR: List must start with 0 end ending with -1")
+##            exit()
+##           
+##        self.ctpall.append(list)
+##        parameters.ctp=self.ctpall
+##        self.print_ctp()
 
-        self.nofpulses=len(parameters.pulse)
-         
-        if (self.nofpulses==1): 
-            WRITE_STRING( "single pulse, no CTP selection possible")
-            return
-             
-        self.ns=2*parameters.nucleus[0,1]  #maximum order
-        pend=0
-        ctp=range(self.nofpulses+1)
-        self.ctpall=[]
-        self.searchp(1,pend,ctp)
-        
-        if len(self.ctpall)==0 :
-            WRITE_STRING("ERROR: ")
-            WRITE_STRING( "No valid coherence transfer has been found:")
-            WRITE_STRING( "  Check your coherence transfer settings!")
-            WRITE_STRING( "   e.g., sum("+chr(127)+"p) must be " )
-            WRITE_STRING( "         -1 for the observed spin S and 0 for spin I" )
-            exit()
 
-        # store the result
-        nctp=size(self.ctpall,0)
-        self.ctpall.sort()
-        if nctp!=pow(2*self.ns+1,self.nofpulses-1):
-            if (verbose) : WRITE_STRING( "number of CTPs: " + nctp)
-            self.print_ctp()
-            parameters.ctp=self.ctpall
-        else:
-            if (verbose) : WRITE_STRING(" all allowed") 
-            #TODO: check some other situation where it is not needed to
-            #      make the calculation of all CTPs 
-
-    # print selected coherence transfers        
-    def print_ctp(self):
-    #---------------
-        #global ctpall, ctpdict
-        i=1
-        self.ctpall.sort()
-        #create a dictionnary (to reference esaly the various coherence)
-        self.ctpdict={}
-        for c in self.ctpall:
-            self.ctpdict[i]=c
-            strg = str(int(i)) + ":  {"  
-            for j in range(size(self.ctpall,1)-1):
-                item=c[j]
-                if abs(item)<=999:
-                    strg= strg + str(int(item)).rjust(3)+" ->"
-                else:
-                    strg= strg + "("+str(int(item-10000)).rjust(3)+","+str(-int(item-10000)).ljust(3)+") ->"
-            strg=strg + " -1 }"
-            if (verbose) : WRITE_STRING(strg)
-            i=i+1
-          
-    # compress coherence transfers----------------------------------------------------        
-    def compress_ctp(self):
-    #------------------------------------------------------------------------------
-        #global nofpulses, ns, ctpall
-        
-        if (verbose) : WRITE_STRING( "\nREDUCING NUMBER OF CTP :")
-
-        l=len(self.ctpall)
-        if l==0 :
-            WRITE_STRING( "ERROR: ")
-            WRITE_STRING( "No valid coherence transfer has been found:")
-            exit()
-
-        #look for pathway where two symmetrical coherences are found 
-        for c1 in self.ctpall:
-            #print "check ",c1  
-            for c2 in self.ctpall:
-                if c2!=c1:
-                    #print "compare with ",c2     
-                    for i in range(1,size(self.ctpall,1)-1):  
-                        #look each items except the first one (always 0) and the last (-1).  
-                        store=c2
-                        store[i]=-store[i]
-                        if store==c1:
-                            #this two pathway are identical except for one element which is symetric
-                            #we can reduce it to only one (we add 10000 to says that two symetric element
-                            #must be retained)
-                            self.ctpall.remove(c2)
-                            self.ctpall.remove(c1)
-                            store[i]=abs(store[i])+10000
-                            self.ctpall.append(store)
-                            #WRITE_STRING( store )
-                        break
-        if len(self.ctpall)== l :
-            if (verbose) : WRITE_STRING( "No reduction possible." )   
-        else:
-            parameters.ctp=self.ctpall
-            self.print_ctp()
-        
-    # searchp----------------------------------------------------------------------
-    def searchp(self,nc,pend,ctpi):
-    #------------------------------------------------------------------------------
-        """
-        recursive function
-        used by check_ctp
-        """  
-        #global nofpulses, ns, ctpall
-        ctpi[nc-1]=pend
-        if nc==(self.nofpulses+1):  
-            if pend==-1 and nc==(self.nofpulses+1):
-                c=[]
-                for i in ctpi:
-                    c.append(i)
-                self.ctpall.append(c)
-            return
-        else:  
-            dp=parameters.coher[nc-1,1]
-            nbphases=parameters.coher[nc-1,2]
-            if dp==999 :   #all jumps allowed
-                dp=1 
-                nbphases=1
-            for n in range(-int(3*self.ns),int(3*self.ns)):
-                p=pend+dp+nbphases*n
-                if p<=self.ns and p>=-self.ns :
-                    self.searchp(nc+1, p,ctpi)
-             
-    # remove_ctp-------------------------------------------------------------------
-    def remove_ctp(self,index):
-    #------------------------------------------------------------------------------
-        """ remove_ctp : to remove one or more ctp in the list
-            arg: index is a scalar
-                 or a list in the format (index1, index2...)"""
-        #global ctpdict, ctpall
-        if (verbose) : WRITE_STRING( "\nREMOVING CTP"+str(index))
-        # here the dictionnary is useful
-        #(because we cannot know easily the order of the list element)
-        try:
-            for i in index:    
-                del self.ctpdict[i]
-        except:
-            try:
-                del self.ctpdict[index]  #if list is a single number     
-            except:
-                WRITE_STRING( "ERROR in the remove_ctp command")
-                WRITE_STRING( self.remove_ctp.__doc__)
-        self.ctpall=ctpdict.values()
-        parameters.ctp=self.ctpall
-        self.print_ctp()
-
-    # set ctp----------------------------------------------------------------------
-    def set_ctp(self,list):
-    #------------------------------------------------------------------------------
-        """ create one CTP(s) from a list of value """
-        #global nofpulses, ns, ctpall
-        if (verbose) : WRITE_STRING( "\nADDING A COHERENCE TRANSFER PATHWAY: ")
-        if len(list)!= self.nofpulses+1:
-            WRITE_STRING( "ERROR: len of the list is not correct.")
-            WRITE_STRING( "Must be number of pulse+1")
-            exit()
-        if list[0]!=0 and list[self.nofpulses]!=-1:   
-            WRITE_STRING( "ERROR: List must start with 0 end ending with -1")
-            exit()
-           
-        self.ctpall.append(list)
-        parameters.ctp=self.ctpall
-        self.print_ctp()
-
-
-# DIPOLAR COUPLINGS
-#====================
-      
-# dipole_from_distance-------------------
-def dipole_from_distance(distance,f1,f2):
-#----------------------------------------
-    """
-    'Compute dipolar coupling from distances' 
-    args:
-        distance - distances between nucleus
-        f1, f2 - larmor frequency of the two nuclei 
-    """
-    DEBUG_MSG("dipole from distance")
-    field = parameters.spectrometerfield
-    h = 6.6260693e-34
-    mu0 = 4*pi*1.0e-7
-    f1 = f1/field  #conversion en gamma
-    f2 = f2/field
-    dipolar = abs(f1*f2*mu0*h/(distance*1.0e-10)**3/4/pi)
-    return dipolar
-                 
-
-# indirect j coupling --------------------------------------------------------------
-def set_indirect(index,second,j = 0,delta = 0,eta = 0,alpha = 0,beta = 0,gamma = 0):
-#-----------------------------------------------------------------------------------
-    """
-    set_indirect -- 
-    'Set the indirect J coupling between a pair of nucleus'
-    args:
-        index - index of the first nucleus (defined previously by set_nucleus)
-                Required to be one.
-        second - index of the second nucleus (defined previously by set_nucleus)
-        j - J coupling value
-        delta - ansotropy of J
-        alpha, beta, gamma - euler angles with respect to the molecular frame
-    """
-    DEBUG_MSG("Set Indirect")
-    if parameters.nucleus == None: 
-        WRITE_STRING("\n*set_indirect*\nERROR: No nucleus were defined yet. Cannot set indirect j coupling'!\n")
-        WRITE_STRING(set_indirect.__doc__)
-        exit()
-    else:
-        if index != 1: 
-            WRITE_STRING("\n*set_indirect*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
-            WRITE_STRING("It has been automatically changed.")
-            index = 1
-        if second == 1:   
-            WRITE_STRING("\n*set_indirect*\nWARNING: the index of the second nucleus is required to be different of the first index!")
-            WRITE_STRING("It has been automatically changed to 'index+1'.")
-            second = index + 1
-        if second > len(parameters.nucleus): 
-            WRITE_STRING("\n*set_indirect*\nERROR: the second index does not correspond to an existing nucleus!\n")
-            WRITE_STRING(set_indirect.__doc__)
-            exit()
-    j = evaluate(j)
-    delta = evaluate(delta)
-    eta = evaluate(eta)
-    alpha = evaluate(alpha)
-    beta = evaluate(beta) 
-    gamma = evaluate(gamma)  
-    if parameters.indirect==None:
-        if (verbose) : WRITE_STRING("\nindirect J coupling:")
-        ar=[[index,second,j,delta,eta,alpha,beta,gamma]]   
-    else:
-        size=len(parameters.indirect) 
-        ar=[[0,0,0,0,0,0,0,0] for i in range(size+1)]
-        i=0
-        while i < size :
-            ar[i]=[int(parameters.indirect[i,0]),int(parameters.indirect[i,1]),parameters.indirect[i,2], parameters.indirect[i,3], parameters.indirect[i,4],parameters.indirect[i,5],parameters.indirect[i,6],parameters.indirect[i,7]]  #copy of the previous elements
-            i=i+1
-        ar[size]=[index,second,j,delta,eta,alpha,beta,gamma]       
-    parameters.indirect=ar                                          #allocate or reallocate and initialize       
-    size=len(parameters.indirect)
-    i=size-1
-    if (verbose) :
-        WRITE_STRING("\tIndirect J coupling ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,2])+" Hz")
-        if parameters.indirect[i,3]!=0 : WRITE_STRING("\tdelta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,3])+" Hz")
-        if parameters.indirect[i,3]!=0 : WRITE_STRING("\teta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,4]))
-        if parameters.indirect[i,3]!=0 : WRITE_STRING("\teuler J ("+str(index)+","+str(second)+"): ["+ str(parameters.indirect[i,5])+","+str(parameters.indirect[i,6])+","+str(parameters.indirect[i,7])+"]")     
-
-# direct dipolar coupling -----------------------------------------
-def set_dipole(index,second,dip=0,distance=0,alpha=0,beta=0,gamma=0):
-#------------------------------------------------------------------
-    """
-    -- set_dipole -- 
-    'Set the direct dipole coupling between a pair of nucleus'
-    args:
-        index - index of the first nucleus (defined previously by set_nucleus)
-                Required to be one.
-        second - index of the second nucleus (defined previously by set_nucleus)
-        dip - dipolar coupling value
-        distances - distance between nucleus in angstrom (used only if d=0)
-        alpha, beta, gamma - euler angles with respect to the molecular frame
-    """
-    DEBUG_MSG("Set Dipole")
-    if parameters.nucleus==None: 
-        WRITE_STRING("\n*set_dipole*\nERROR: No nucleus were defined yet. Cannot set dipole coupling'!\n")
-        WRITE_STRING(set_dipole.__doc__)
-        exit()
-    else:
-        if index!=1: 
-            WRITE_STRING("\n*set_dipole*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
-            WRITE_STRING("It has been automatically changed.")
-            index=1
-        if second==1:   
-            WRITE_STRING("\n*set_dipole*\nWARNING: the index of the second nucleus is required to be different of the first index!")
-            WRITE_STRING("It has been automatically changed to 'index+1'.")
-            second=index+1
-        if second>len(parameters.nucleus): 
-            WRITE_STRING("\n*set_dipole*\nERROR: the second index does not correspond to an existing nucleus!\n")
-            WRITE_STRING(set_dipole.__doc__)
-            exit()
-    dip=evaluate(dip)
-    distance=evaluate(distance)
-    if (distance!=0) and (dip==0) : dip=dipole_from_distance(distance,parameters.nucleus[index-1,2],parameters.nucleus[second-1,2])
-    alpha=evaluate(alpha)
-    beta=evaluate(beta) 
-    gamma=evaluate(gamma)
-    if parameters.dipole==None:
-        if (verbose) : WRITE_STRING("\ndipolar coupling:")
-        ar=[[index,second,dip,distance,alpha,beta,gamma]]   
-    else:
-        size=len(parameters.dipole) 
-        ar=[[0,0,0,0,0,0,0] for i in range(size+1)]
-        #copy of the previous elements
-        i=0
-        while i < size :
-            ar[i]=[int(parameters.dipole[i,0]),int(parameters.dipole[i,1]),parameters.dipole[i,2], parameters.dipole[i,3], parameters.dipole[i,4],parameters.dipole[i,5],parameters.dipole[i,6]] 
-            i=i+1
-        ar[size]=[index,second,dip,distance,alpha,beta,gamma]       
-    parameters.dipole=ar                                          #allocate or reallocate and initialize       
-     
-    size=len(parameters.dipole)
-    i=size-1
-    if (verbose) : WRITE_STRING("\tdipolar coupling ("+str(index)+","+str(second)+"): "+str(parameters.dipole[i,2])+" Hz")
-    if (verbose) : WRITE_STRING("\tpolar angles [alpha,beta] ("+str(index)+","+str(second)+"): ["+ str(parameters.dipole[i,4])+","+str(parameters.dipole[i,5])+","+str(parameters.dipole[i,6])+"]")     
+                
 
 #  MODULE FUNCTIONS
 #==================

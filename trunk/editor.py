@@ -731,8 +731,6 @@ class ViewLog:
         points = self.window.GetFont().GetPointSize()
         f = wx.Font(points, wx.MODERN, wx.NORMAL, wx.NORMAL)
         self.window.SetDefaultStyle(wx.TextAttr("BLACK", wx.NullColour, f))
-        # self.window.SetStyle(1, 1000, wx.TextAttr("BLUE", wx.NullColour, f))
-
         wx.EVT_CHAR(self.window, self.EvtChar)
         wx.EVT_WINDOW_DESTROY(self.window, self.OnWindowDestroy)
 

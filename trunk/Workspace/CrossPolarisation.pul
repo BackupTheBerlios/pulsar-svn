@@ -1,0 +1,79 @@
+# CrossPolarization.pul
+# PULSAR Project:
+#
+# version=1.0
+# Author: C. Fernandez
+#
+#------------------------------------------------------------------------------
+# License:
+#
+# Copyright (C) 2006-2007 Jean-Paul Amoureux, Christian Fernandez
+# JPA - Unite de Catalyse et Chimie du Solide, Lille, France.
+# CF  - Laboratoire Catalyse et Spectrochimie, Caen, France.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License (GPL)
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# To read the license please visit http://www.gnu.org/copyleft/gpl.html
+#------------------------------------------------------------------------------
+# Purpose:
+#   Cross polarization sequence between a pair of nuclei
+#------------------------------------------------------------------------------
+
+# start a new simulation
+#-----------------------
+sim1=Simulation(verbose=True,debug=True)
+
+# Set observation channel
+#------------------------
+sim1.set_channel("27Al","1H")      #define both channels
+
+# Nucleus definition 
+#-------------------- 
+#nucleus with index 0
+Al=Nucleus("27Al")   
+Al.set_quadrupole(cq="2.5 mhz", eta=0.3)     
+Al.set_lb("100 Hz")          
+sim1.add_nucleus(Al)        
+
+# and the proton (with all default parameters)
+#---------------------------------------------
+H=Nucleus("1H")
+sim1.add_nucleus(H)
+
+#select observed
+#---------------
+sim1.select_observed(Al)
+
+#select observed
+#---------------
+sim1.select_coupled(H)
+
+# simulation setting
+#-------------------            
+sim1.set_spinningspeed("10 kHz") 
+sim1.set_sw("10 kHz")             
+sim1.set_detect(CENTRAL)
+sim1.set_nsb(AUTO) 
+sim1.set_dipole(1,2,dip="0 Hz")
+
+# Pulse sequence
+#---------------
+for i in range(2):
+    sim1.reset_pulse()
+    sim1.set_pulse(2.5,powerI=100*kHz,phaseI=90)                      #90° Y pulse in channel I
+    sim1.set_pulse(1,powerS=100*kHz,powerI=100*kHz,phaseS=180*i)         #simultaneous X pulses (Contact)
+    
+    # Run simulations
+    #----------------
+    sim1.execute_pulsar()  
+    sim1.store_spectrum()   
+
+#Write spectra
+sim1.sum_spectra()
+sim1.write_spectra()

@@ -40,7 +40,6 @@ from debug import *
 #------------------------------------------------------------------------------
 def runScript(name):
 #------------------------------------------------------------------------------
-
     [dirname,filename]=os.path.split(name)
     [scriptname,extension]=os.path.splitext(filename)
     DEBUG_MSG("process RunScript: "+filename)
@@ -64,29 +63,33 @@ def runScript(name):
     # Define some default variables
     #------------------------------
     os.chdir(PULSARPATH)
-    imports  = 'from functions import *\n'    
+    imports  = "from functions import *\n"
 
     # Perform before run commands
     #----------------------------
 
     header  = '_script="' + string.join(dirname.split('\\'),'/') + '/' + scriptname + '"'+ '\n'
     # to avoid a bug with filename all \ are replaced with /.
+    header += "\nWRITE_STRING('  ')\n"
     header += "\nWRITE_STRING('SCRIPT PROCESS: Started...')\n"
-
+    header += "\nWRITE_STRING('  ')\n"
+    
     # Add the header to the script
     #-----------------------------
     text = header + text
     
     # Perform after run commands
     #---------------------------
-    # text += "\nsim1.write_spectra(_script)\n"
     text +="\ntry:"
     text +="\n   os.rename('scratch.tmp',_script+'.spe')"
     text +="\nexcept:"
-    text +="\n   WRITE_STRING('ERROR: '+_script+'.spe cannot be created.')" 
-    text +="\n   WRITE_STRING('   May be you forgot the instruction sim.write_spectra() at the end of your file')"
-    text +="\n   cancel=True"
+    text +="\n   pass"
+    text +="\n   #WRITE_ERROR(_script+'.spe cannot be created.')" 
+    text +="\n   #WRITE_STRING('   May be you forgot the instruction sim.write_spectra() at the end of your file')"
+    text +="\n   #cancel=True"
+    text +="\nWRITE_STRING('  ')\n"
     text +="\nWRITE_STRING('SCRIPT PROCESS: End')\n"
+    text +="\nWRITE_STRING('  ')\n"
     text = text.replace('\r', '\n')
     text = text.replace('\n\n', '\n')    
 
