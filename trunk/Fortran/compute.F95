@@ -1,4 +1,4 @@
-!     Last change:  CF   12 Feb 2007    1:13 pm
+!     Last change:  CF   14 Feb 2007   10:52 am
 !
 !$compute.f95
 !
@@ -407,7 +407,7 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 ! define all operators
 ! --------------------
   call reset_operators()
-  call show_operators(pydebug_msg)
+  !call show_operators(pydebug_msg)
 
 ! preparation pulses and delays
 !------------------------------
@@ -776,18 +776,18 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
     if (verbose) then
       message="rho:I density matrix"
       call pywrite_string()
-      write (str,"(I3)") ns
+      write (str,"(I3)") ni
       fmts="("//TRIM(adjustl(str))// "(f15.3,1x))"
       message="...real part..."
       call pywrite_string()
-      do j=1,ns
-        write(message, fmts)  (REAL(roi(j,i)),i=1,ns)
+      do j=1,ni
+        write(message, fmts)  (REAL(roi(j,i)),i=1,ni)
         call pywrite_string()
       end do
       message="...imag part..."
       call pywrite_string()
-      do j=1,ns
-        write(message, fmts)  (AIMAG(roi(j,i)),i=1,ns)
+      do j=1,ni
+        write(message, fmts)  (AIMAG(roi(j,i)),i=1,ni)
         call pywrite_string()
       end do
     end if
