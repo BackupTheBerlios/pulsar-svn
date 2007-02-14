@@ -1,4 +1,4 @@
-# CrossPolarization.pul
+# CP-HH.pul
 # PULSAR Project:
 #
 # version=1.0
@@ -60,26 +60,27 @@ sim1.set_spinningspeed(STATIC)
 sim1.set_sw("10 kHz")             
 sim1.set_detect(CENTRAL)
 sim1.set_npts("1 K")
-sim1.set_accuracy(4)
+sim1.set_accuracy(3)
 
 # Pulse sequence
 #---------------
 sim1.reset_spectra()                #reset spectra to zero
 
-for p15 in arange(25,1000,25):
+p15=250*usec
+for plS in arange(50,150,.5):
     sim1.clearspectrum(True)
     for stp in [0,180]:
         sim1.reset_pulse()
         # spin temperature inversion phase: stp
-        sim1.set_pulse(2.5,powerI=100*kHz,phaseI=0+stp)                   #90° Y pulse in channel I (plus 'stp' a phase for spin temperature inversion)
-        sim1.set_pulse(p15,powerS=100*kHz,phaseS=90,powerI=100*kHz,phaseI=90)    #simultaneous X pulses (Contact)
+        sim1.set_pulse(2.5,powerI=100*kHz,phaseI=stp)                   #90° Y pulse in channel I (plus 'stp' a phase for spin temperature inversion)
+        sim1.set_pulse(p15,powerS=plS*kHz,phaseS=90,powerI=100*kHz,phaseI=90)    #simultaneous X pulses (Contact)
         sim1.set_rcph(stp) #the receiver has to follow the phase 'stp'
     
         # Run simulations
         #----------------
         sim1.execute_pulsar()  
         sim1.clearspectrum(False)       #keep the spectra in memory
-    sim1.store_spectrum(data=p15,label="Contact time") 
+    sim1.store_spectrum(data=plS,label="rf on channel S (kHz)") 
   
 #Write spectra
 sim1.write_spectra()

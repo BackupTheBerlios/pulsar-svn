@@ -686,7 +686,6 @@ class Simulation:
         """
         define the channels
         """
-        print "ok"
         if self.ABORT:
             return
         
@@ -723,7 +722,7 @@ class Simulation:
         if self.ABORT:
             return
 
-        print "  "
+        DEBUG_MSG("  ")
         DEBUG_MSG("SELECT_COUPLED ")
         DEBUG_MSG("  Number of different nuclei :"+str(len(self.sample.nuclei)))
 
@@ -786,7 +785,7 @@ class Simulation:
         delta=0.
         abundance=None
         
-        print "  "
+        DEBUG_MSG("  ")
         DEBUG_MSG("SELECT_NUCLEUS ")
         DEBUG_MSG("  Number of defined and different nuclei :"+str(len(self.sample.nuclei)))
 

@@ -131,7 +131,7 @@ def runScript(name):
         while keepGoing:
             count += 1
             if count>=max : count=max-1999
-            wx.MilliSleep(1)
+            wx.MilliSleep(.1)
             if thrd.IsRunning():
                 keepGoing=dlg.Update(count)
             else:
