@@ -34,6 +34,7 @@ import string
 import thread
 from config import PULSARPATH
 from functions import *
+from f95pulsar import parameters
 
 from debug import *
 
@@ -73,6 +74,7 @@ def runScript(name):
     header += "\nWRITE_STRING('  ')\n"
     header += "\nWRITE_STRING('SCRIPT PROCESS: Started...')\n"
     header += "\nWRITE_STRING('  ')\n"
+    header += "\nWRITE_STRING('  ')\n"
     
     # Add the header to the script
     #-----------------------------
@@ -111,8 +113,10 @@ def runScript(name):
                            "Please wait...",
                            maximum = max,
                            parent= None,
-                           style = wx.PD_CAN_ABORT
-                            | wx.PD_APP_MODAL
+                           style =
+                            wx.PD_APP_MODAL 
+                            | wx.PD_SMOOTH
+                            | wx.PD_CAN_ABORT
                             | wx.PD_ELAPSED_TIME
                             #| wx.PD_ESTIMATED_TIME
                             #| wx.PD_REMAINING_TIME
@@ -131,12 +135,13 @@ def runScript(name):
         while keepGoing:
             count += 1
             if count>=max : count=max-1999
-            wx.MilliSleep(.1)
+            wx.MilliSleep(.001)
             if thrd.IsRunning():
                 keepGoing=dlg.Update(count)
             else:
                 keepGoing=False
-            
+        parameters.keepGoing=False
+           
     # handle runtime errors (TODO: Complete this)
     #--------------------------------------------
     except PulsarError, e:
@@ -153,7 +158,7 @@ def runScript(name):
     # Remove dialog box
     #------------------
     dlg.Destroy()
-
+    thrd.Stop()
     # delete the temporary file
     #--------------------------    
     #os.remove(scriptname+".tmp")

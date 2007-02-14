@@ -49,12 +49,9 @@ sim1.set_sw("10 kHz")
 # Pulse sequence
 #---------------
 sim1.set_pulse(0.5*usec,powerS=100*kHz)
-#sim1.set_idealpulse()
 
 # Run simulations
 #----------------
-sim1.reset_spectra()
-sim1.reset_nucleus()
 sim1.select_nucleus()
 sim1.set_detect(CENTRAL)
 sim1.set_nsb(AUTO) 

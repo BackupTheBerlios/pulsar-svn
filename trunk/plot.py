@@ -270,22 +270,37 @@ class PlotFigure(wx.Window):
         Plot one or more 1D spectra on the same figure
         """
 
-        if not mode :
-            mode='reset'
-        else:
-            mode= string.lower(mode)
-
-        if mode == 'reset' :
+        if not mode or mode=='reset':
             try:
                 if not self.read_spectra(): return False
             except:
                 return False
-                
+            
             self.maxi=0
             for j in range(self.ni):
                 mxi=max(map(abs,self.spec[j]))
                 self.maxi=max(mxi,self.maxi)
-            self.offset=0
+                self.offset=0
+                
+            if self.ni<6:
+                mode='standard'
+            else:
+                mode='popt'
+
+        else:
+            mode= string.lower(mode)
+
+##        if mode == 'reset' :
+##            try:
+##                if not self.read_spectra(): return False
+##            except:
+##                return False
+##                
+##            self.maxi=0
+##            for j in range(self.ni):
+##                mxi=max(map(abs,self.spec[j]))
+##                self.maxi=max(mxi,self.maxi)
+##            self.offset=0
 
         mx=self.ni+1
         self.dlg = wx.ProgressDialog("Spectrum plotting",
@@ -307,8 +322,101 @@ class PlotFigure(wx.Window):
             self.offset=offset
         else:
             self.offset=0
-        
-        if mode == 'reset' or mode=="standard" :               
+
+        #------------------
+        if mode == "popt":
+
+            if self.ni == 1:
+                mode=="standard"
+            else:
+                self.fig.clear()
+                self.plotdat=None
+                self.plotdata = self.fig.add_subplot(111)
+                xticks=[]
+                xtickslabel=[]
+                spacing=10*(round(log10(self.ni))-1)
+                DEBUG_MSG("%5i %5i"%(self.ni, spacing))
+                if spacing<2: spacing=2
+                for i in range(self.ni):
+                    X=[float(self.n-j-1+i*self.n)/self.n for j in range(self.n)]
+                    if self.ydata:
+                        if i%spacing==0:
+                            xticks.append(float(self.n/2+i*self.n)/self.n)
+                            xtickslabel.append(string.strip(str('%10.3f'%self.ydata[i])))
+                    Y=[k.real for k in self.spec[i]]
+                    self.plotdata.plot(X, array(Y))
+                    count += 1
+                    keepGoing = self.dlg.Update(count)
+
+                self.plotdata.set_xlabel('Index')   
+                if self.ydata:
+                    self.plotdata.set_xticks(xticks)   
+                    self.plotdata.set_xticklabels(xtickslabel)
+                    self.plotdata.set_xlabel(self.label)
+                    
+                self.plotdata.set_ylabel('Intensity (a.u.)\n\n')                   
+                self.plotdata.set_title("POPT display, "+self.title)
+                self.plotdata.grid(self.grid)
+            
+        #------------------
+        if mode == "popt 2d":
+            if self.ni == 1:
+                mode=="standard"
+            else:                
+                self.fig.clear()
+                self.plotdata = self.fig.add_subplot(111)
+
+                count += 1
+                keepGoing = self.dlg.Update(count)
+
+                X=[]
+                Y=[]
+                Z=[]
+                X=self.ppm
+                Y=range(self.ni)
+                yticks=[]
+                ytickslabel=[]
+                spacing=10*(round(log10(self.ni))-1)
+                if spacing<2: spacing=2
+                maxi=0.
+                mini=0.
+                for i in range(self.ni):
+                    Zt=[k.real for k in self.spec[i]]
+                    mxi=max(map(abs,Zt))
+                    mni=min(map(abs,Zt))
+                    maxi=max(maxi,mxi)
+                    mini=min(mini,mni)
+                    Z.append(array(Zt))
+                    if self.ydata:
+                        if i%spacing==0:
+                            yticks.append(i)
+                            ytickslabel.append(string.strip(str('%10.3f'%self.ydata[i])))
+                amp=(maxi-mini)
+                levels=arange(mini-amp*.05,maxi+amp*.05,amp/self.ni)
+                print mini,maxi
+                cmap=pylab.cm.get_cmap('jet', len(levels)-1)
+                
+                cset = self.plotdata.contourf(X, Y, Z, levels, cmap=cmap,)
+
+                #cset2 = self.plotdata.contour(X, Y, Z, cset.levels,
+                #        colors = 'k',
+                #        hold='on')
+                self.plotdata.set_xlim(self.ppm[len(self.ppm)-1],self.ppm[0])
+                self.plotdata.set_xlabel('Chemical shift (ppm)')
+                self.plotdata.set_ylabel('Index\n')
+                if self.ydata:
+                    self.plotdata.set_yticks(yticks)   
+                    self.plotdata.set_yticklabels(ytickslabel)
+                    self.plotdata.set_ylabel(self.label+'\n')
+
+                self.plotdata.set_title("POPT 2D display, "+self.title)
+    ##                clabels=[mini,0.,maxi]
+    ##                self.fig.colorbar(cset,clabels=clabels)
+    ##                #self.plotdata.grid(self.grid)
+
+
+        if mode == 'reset' or mode=="standard" :
+            #print string.lower(self.options['units'])
             if string.lower(self.options['units'])=="hz":
                 for i in range(self.ni):
                     spec=[]
@@ -335,101 +443,6 @@ class PlotFigure(wx.Window):
                 self.plotdata.set_yticklabels([])         
             self.plotdata.set_title(self.title)
             self.plotdata.grid(self.grid)
-
-        #------------------
-        elif mode == "popt":
-
-            if self.ni == 1:
-                self.dlg.Destroy()
-                return
-
-            self.fig.clear()
-            self.plotdat=None
-            self.plotdata = self.fig.add_subplot(111)
-
-            xticks=[]
-            xtickslabel=[]
-            spacing=10*(round(log10(self.ni))-1)
-            DEBUG_MSG("%5i %5i"%(self.ni, spacing))
-            if spacing<1: spacing=1
-            for i in range(self.ni):
-                X=[float(self.n-j-1+i*self.n)/self.n for j in range(self.n)]
-                if self.ydata:
-                    if i%spacing==0:
-                        xticks.append(float(self.n/2+i*self.n)/self.n)
-                        xtickslabel.append(string.strip(str('%10.3f'%self.ydata[i])))
-                Y=[k.real for k in self.spec[i]]
-                self.plotdata.plot(X, array(Y))
-                count += 1
-                keepGoing = self.dlg.Update(count)
-
-            self.plotdata.set_xlabel('Index')   
-            if self.ydata:
-                self.plotdata.set_xticks(xticks)   
-                self.plotdata.set_xticklabels(xtickslabel)
-                self.plotdata.set_xlabel(self.label)
-                
-            self.plotdata.set_ylabel('Intensity (a.u.)\n\n')                   
-            self.plotdata.set_title("POPT display, "+self.title)
-            self.plotdata.grid(self.grid)
-
-         #------------------
-        elif mode == "popt 2d":
-
-            if self.ni == 1:
-                self.dlg.Destroy()
-                return
-
-            self.fig.clear()
-            self.plotdata = self.fig.add_subplot(111)
-
-            count += 1
-            keepGoing = self.dlg.Update(count)
-
-            X=[]
-            Y=[]
-            Z=[]
-            X=self.ppm
-            Y=range(self.ni)
-            yticks=[]
-            ytickslabel=[]
-            spacing=10*(round(log10(self.ni))-1)
-            if spacing<1: spacing=1
-            maxi=0.
-            mini=0.
-            for i in range(self.ni):
-                Zt=[k.real for k in self.spec[i]]
-                mxi=max(map(abs,Zt))
-                mni=min(map(abs,Zt))
-                maxi=max(maxi,mxi)
-                mini=min(mini,mni)
-                Z.append(array(Zt))
-                if self.ydata:
-                    if i%spacing==0:
-                        yticks.append(i)
-                        ytickslabel.append(string.strip(str('%10.3f'%self.ydata[i])))
-            amp=(maxi-mini)
-            levels=arange(mini-amp*.05,maxi+amp*.05,amp/self.ni)
-
-            cmap=pylab.cm.get_cmap('jet', len(levels)-1)
-            
-            cset = self.plotdata.contourf(X, Y, Z, levels, cmap=cmap,)
-
-            #cset2 = self.plotdata.contour(X, Y, Z, cset.levels,
-            #        colors = 'k',
-            #        hold='on')
-            self.plotdata.set_xlim(self.ppm[len(self.ppm)-1],self.ppm[0])
-            self.plotdata.set_xlabel('Chemical shift (ppm)')
-            self.plotdata.set_ylabel('Index\n')
-            if self.ydata:
-                self.plotdata.set_yticks(yticks)   
-                self.plotdata.set_yticklabels(ytickslabel)
-                self.plotdata.set_ylabel(self.label+'\n')
-
-            self.plotdata.set_title("POPT 2D display, "+self.title)
-##                clabels=[mini,0.,maxi]
-##                self.fig.colorbar(cset,clabels=clabels)
-##                #self.plotdata.grid(self.grid)
 
        #update everything and exit
         self.canvas.draw()

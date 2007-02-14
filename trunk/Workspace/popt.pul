@@ -75,7 +75,6 @@ sim1.set_detect(ALL)            # default ALL (other values: CENTRAL, SATELLITE)
 sim1.reset_spectra()            # reset the current spectrum buffer
 p1_list= arange(.5,6,.25)       # (start,end,step)
 for p1 in p1_list:              # start a loop on p1
-    sim1.reset_pulse()          # reset the pulse sequence (required!)
     #Pulse sequence (one pulse): length is the pulse length, here variable
     sim1.set_pulse(p1,powerS="100 kHz",offsetS=0,phaseS=0)
     # start execution of this simulation

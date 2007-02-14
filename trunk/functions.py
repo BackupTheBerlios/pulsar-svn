@@ -116,6 +116,7 @@ class Simulation:
         self.verbose=verbose or debug
         self.debug=debug
         self.reset_pulsar()
+        self.reset_pulse()
         self.reset_nucleus()
         self.reset_spectra()
         
@@ -131,6 +132,7 @@ class Simulation:
         #Fortan flags
         parameters.verbose=self.verbose
         parameters.debug=self.debug
+        parameters.keepGoing=True
         
         # initialise some basic parameters for the simulation
         self.set_protonfrequency(protonfrequency)            
@@ -254,9 +256,15 @@ class Simulation:
         if not TEST and not self.ABORT:
             compute(pydebug_msg,pywrite_string)
         #to do check possible code errosrs when retruning from compute
-
+        if not parameters.keepGoing:
+            self.ABORT=True
+            return
+        
         #reset receiver phase
         parameters.rcph=0.0
+
+        #reset pulse
+        self.reset_pulse()
 
     #-----------------
     def display(self):
@@ -658,6 +666,9 @@ class Simulation:
         
         if (verbose) :
             if not self.ABORT : WRITE_STRING("\nSaving of spectra data done.")
+
+        # reset spectra
+        self.reset_spectra()
 
 ######################################
 ## NUCLEUS AND SELECTION OF NUCLEUS ##

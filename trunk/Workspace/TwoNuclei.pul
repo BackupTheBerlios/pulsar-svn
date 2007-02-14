@@ -39,20 +39,20 @@ Na1=Nucleus("23Na")
 Na1.set_quadrupole(cq="1.5 mhz", eta=0.3)    
 Na1.set_chemicalshift(iso="2 ppm") 
 Na1.set_lb("10 Hz") 
-Na1.set_concentration(.5)          
+Na1.set_concentration(0.75)          
 sim1.add_nucleus(Na1)        
 
 Na2=Nucleus("23Na")   
-Na2.set_quadrupole(cq="0.5 mhz", eta=0.1)    
+Na2.set_quadrupole(cq="2.0 mhz", eta=0.1)    
 Na2.set_chemicalshift(iso="-10 ppm") 
 Na2.set_lb("300 Hz") 
-Na2.set_concentration(1)       
+Na2.set_concentration(1.0)       
 sim1.add_nucleus(Na2) 
 
 # simulation setting
 #-------------------            
 sim1.set_spinningspeed("2.5 kHz") 
-sim1.set_sw("10 kHz")             
+sim1.set_sw("20 kHz")             
 
 # Pulse sequence
 #---------------
@@ -62,7 +62,6 @@ sim1.set_idealpulse()
 #----------------
 n=sim1.get_numberofnuclei("23Na")
 for index in range (n):
-    sim1.reset_nucleus()
     sim1.select_nucleus(index)
     sim1.set_nsb(AUTO) 
     sim1.execute_pulsar()  

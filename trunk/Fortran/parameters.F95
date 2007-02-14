@@ -1,4 +1,4 @@
-!     Last change:  CF   14 Feb 2007    6:30 pm
+!     Last change:  CF   14 Feb 2007    9:28 pm
 !
 !$parameters.f95
 !
@@ -146,6 +146,8 @@ module parameters
   logical*8 :: idealpulse=.true.
   LOGICAL*8 :: zerospectrum=.TRUE.                         ! the spectrum memo
   REAL*8 		:: rcph = 0.0d0                                ! receiver phase
+
+  LOGICAL*8 :: keepGoing=.TRUE.
 
 end module parameters
 
