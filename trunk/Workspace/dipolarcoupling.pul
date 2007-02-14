@@ -31,14 +31,14 @@ sim1=Simulation(verbose=True, debug=True)
 
 # Set observation channel
 #------------------------
-sim1.set_channel("27Al","1H")      #define both channels
+sim1.set_channel("13C","1H")      #define both channels
 
 # Nucleus definition 
 #-------------------- 
 #nucleus with index 0
-Al=Nucleus("27Al")   
-Al.set_quadrupole(cq="0.1 mhz", eta=0.3)     
-Al.set_lb("100 Hz")          
+Al=Nucleus("13C")   
+#Al.set_quadrupole(cq="0.1 mhz", eta=0.3)     
+Al.set_lb("10 Hz")          
 sim1.add_nucleus(Al)        
 
 # and the proton (with all default parameters)
@@ -58,8 +58,9 @@ sim1.set_dipole(1,dip="10000 Hz")
 # simulation setting
 #-------------------            
 sim1.set_spinningspeed(STATIC) 
-sim1.set_sw("10 kHz")             
-sim1.set_detect(CENTRAL)
+sim1.set_spinningangle(0)
+sim1.set_sw("20 kHz")             
+sim1.set_detect(ALL)
 sim1.set_npts("1 K")
 sim1.set_accuracy(4)
 

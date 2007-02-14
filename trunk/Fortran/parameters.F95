@@ -1,4 +1,4 @@
-!     Last change:  CF   14 Feb 2007   11:29 am
+!     Last change:  CF   14 Feb 2007    6:30 pm
 !
 !$parameters.f95
 !
@@ -144,6 +144,8 @@ module parameters
   integer*8, allocatable :: iref(:)
 
   logical*8 :: idealpulse=.true.
+  LOGICAL*8 :: zerospectrum=.TRUE.                         ! the spectrum memo
+  REAL*8 		:: rcph = 0.0d0                                ! receiver phase
 
 end module parameters
 

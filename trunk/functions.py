@@ -39,6 +39,7 @@ import re
 import types 
 import string
 import math
+import cmath
 from Numeric import *
 from editor import *
 from f95pulsar import *
@@ -184,6 +185,8 @@ class Simulation:
         self.list_lb=[]
         self.list_gb=[]
         self.list_concentration=[]
+        #also set the parameter zerospectrum to True : Erasing spectra
+        parameters.zerospectrum=True
         
     #-----------------------
     def reset_pulse(self):
@@ -251,6 +254,9 @@ class Simulation:
         if not TEST and not self.ABORT:
             compute(pydebug_msg,pywrite_string)
         #to do check possible code errosrs when retruning from compute
+
+        #reset receiver phase
+        parameters.rcph=0.0
 
     #-----------------
     def display(self):
@@ -537,24 +543,36 @@ class Simulation:
         
         WRITE_STRING("\nA spectrum has been added to collection spectra ("+str(len(self.collection_spectra))+")") 
 
-    #------------------------------------------
-    def sum_spectra(self, do_sum=True):
-    #------------------------------------------
+    #-----------------------------------
+    def clearspectrum(self, clear=True):
+    #-----------------------------------
         """
-        set a flag for future summation of spectra  
+            Keep or clear the current spectrum buffer  
+        """
+        if self.ABORT:
+            return
+        
+        DEBUG_MSG("CLEARSPECTRUM "+str(clear))
+        parameters.zerospectrum=clear
+                        
+    #----------------------------------
+    def sum_spectra(self, do_sum=True):
+    #----------------------------------
+        """
+            Set a flag for future summation of spectra  
         """
         if self.ABORT:
             return
         
         DEBUG_MSG("SUM_SPECTRA "+str(do_sum))
-        self.flag_sum=do_sum
+        self.flag_sum=do_sum   
                     
-    #-------------------------------------------
+    #-----------------------
     def write_spectra(self):
-    #-------------------------------------------
+    #-----------------------
         """
-        Write spectra into a file in various format
-        args: filename - name of the output file (default:'pulsar.spe'
+            Write spectra into a file in various format
+            args: filename - name of the output file (default:'pulsar.spe'
         """
         if self.ABORT:
             return
@@ -1053,7 +1071,7 @@ class Simulation:
     def set_delay(self,length=0,decouple=false):
     #-------------------------------------------
         """
-         SYNTAX : set_delay(self,length,decouple) 
+         SYNTAX : set_delay(length,decouple) 
          'Set delay parameters'
          args:
             length - delay duration
@@ -1064,6 +1082,21 @@ class Simulation:
 
         DEBUG_MSG("SET_DELAY")
         self.sequence.delay(length,decouple)
+
+    #-------------------------------------------
+    def set_rcph(self,phase=0):
+    #-------------------------------------------
+        """ 
+         'Set receiver phase'
+         arg:
+         - phase, default 0
+        """
+        if self.ABORT:
+            return
+
+        DEBUG_MSG("SET_RCPH")
+        if phase==0: return # nothing to do
+        parameters.rcph=phase # transmit to the fortran program
 
     #-----------------------------------------
     def select_coherence(self,dp=999,nbphases=1):
@@ -1115,8 +1148,6 @@ class Simulation:
         """ print selected coherence transfers pathways """
         if self.ABORT:
             return
-        
-        
         i=1
         self.ctpall.sort()
         #create a dictionnary (to reference easily the various coherence)
@@ -1134,14 +1165,12 @@ class Simulation:
             if (verbose) : WRITE_STRING(strg)
             i=i+1
 
-            
     #------------------------       
     def check_pathways(self):
     #------------------------
         """ check coherence transfers pathways """
         if self.ABORT:
             return
-        
         
         if (verbose) : WRITE_STRING( "\nLIST OF POSSIBLE COHERENCE TRANSFER PATHWAYS (CTP):")
 

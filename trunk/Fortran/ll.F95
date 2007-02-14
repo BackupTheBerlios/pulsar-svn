@@ -1,4 +1,4 @@
-!     Last change:  CF   14 Feb 2007   11:24 am
+!     Last change:  CF   14 Feb 2007    6:48 pm
 !
 !$ll.f95
 !
@@ -110,6 +110,7 @@ subroutine ll(xx,yy,zz,ii,jj,r3)
   complex*8    :: args
   complex*8 :: signal
   real*8    :: dem
+  COMPLEX*8 :: recph
 
   cb=zz
   sb=sqrt(abs(1.0d0-zz*zz))
@@ -567,11 +568,14 @@ subroutine ll(xx,yy,zz,ii,jj,r3)
 
   ! observation period : sx et -sy
   !-------------------------------
+  recph=EXP(CMPLX(0.d0,rcph*pi/180.0d0))     ! apply receiver phase
+  PRINT *,"recph",rcph,recph
   do k=1,ns-1
     do insb=-nsb,nsb
       dem=dnorm*sx(k,k+1)/(1.0d0+qq*(wr(ii,jj,k)+dble(insb)*spinningspeed)**2)/r3
       qt(ii,jj,k,insb)=qt(ii,jj,k,insb)+q(k,insb)
       amp(ii,jj,k,insb)=conjg(p(k,insb)*qt(ii,jj,k,insb))*dem
+      amp(ii,jj,k,insb)=amp(ii,jj,k,insb)*recph
     end do
   end do
 

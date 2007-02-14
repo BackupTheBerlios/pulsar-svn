@@ -1,4 +1,4 @@
-!     Last change:  CF   14 Feb 2007   11:24 am
+!     Last change:  CF   14 Feb 2007    5:26 pm
 !
 !$compute.f95
 !
@@ -663,11 +663,17 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
   allocate (qt(0:nt,0:2*nt,ns,-nsb:nsb))
   qt=CMPLX(0.0d0,0.0d0)
 
-  if (ALLOCATED(spec)) deallocate (spec)
-
-!allocate (spec(npts*2+2))  ! will contain the simulated spectrum
-  allocate (spec(npts))! will contain the simulated spectrum
-  spec=CMPLX(0.0d0,0.0d0)
+! spec will contain the simulated spectrum
+! (if zerospectrum is false then it is not erased for addition of data)
+  if (zerospectrum.and.ALLOCATED(spec)) then
+    deallocate (spec)
+  	allocate (spec(npts))
+  	spec=CMPLX(0.0d0,0.0d0)
+  END if
+  if (.not.ALLOCATED(spec)) then  ! in all case if it is not allocated, we have to allocate it
+  	allocate (spec(npts))
+  	spec=CMPLX(0.0d0,0.0d0)
+  END if
 
   if (ALLOCATED(ros)) deallocate (ros)
   allocate (ros(ns,ns))! contains the density matrix of S
