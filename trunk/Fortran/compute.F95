@@ -1,4 +1,4 @@
-!     Last change:  CF   14 Feb 2007   10:52 am
+!     Last change:  CF   14 Feb 2007   11:24 am
 !
 !$compute.f95
 !
@@ -369,6 +369,8 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
       if ((nint(dipole(i,2)).eq.2).and.(icoupled.gt.0)) then
 ! then it is a dipole coupling between s and i
         dsi=dipole(i,3)
+        message=TAB // "One coupled nucleus at least dip= : " // TRIM(num2str(dsi,'(F15.3)'))
+        Call pydebug_msg()
         do j=1,3
           dsiangle(j)=dipole(i,4+j)
         end do
@@ -407,7 +409,7 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
 ! define all operators
 ! --------------------
   call reset_operators()
-  !call show_operators(pydebug_msg)
+  call show_operators(pydebug_msg)
 
 ! preparation pulses and delays
 !------------------------------
@@ -929,7 +931,7 @@ subroutine compute(pydebug_msg,pywrite_string,flagerror)
         END if
 
 ! reset to zero
-        qt=0.0d0! is-it necessary here?      (in the loop?)
+        qt=0.0d0 ! is-it necessary here?      (in the loop?)
 
 ! loop on pulse phases if there is a phase cycling
 ! ------------------------------------------------

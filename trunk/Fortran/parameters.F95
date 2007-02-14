@@ -1,4 +1,4 @@
-!     Last change:  CF   12 Feb 2007    9:37 am
+!     Last change:  CF   14 Feb 2007   11:29 am
 !
 !$parameters.f95
 !
@@ -545,6 +545,14 @@ implicit none
     call pydebug_msg()
     do j=1,nsi
       write( message, fmt1)  (iq2(j,i),i=1,nsi)
+      call pydebug_msg()
+    end do
+    message= "------"
+    call pydebug_msg()
+    message= "sziz"
+    call pydebug_msg()
+    do j=1,nsi
+      write( message, fmt1)  (sziz(j,i),i=1,nsi)
       call pydebug_msg()
     end do
     message= "------"
