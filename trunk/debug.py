@@ -109,6 +109,20 @@ def WRITE_ERROR(string):
     if DEBUG: print '\n\n',stringerror
 
 #------------------------------------------------------------------------------
+def WRITE_WARNING(string):
+#------------------------------------------------------------------------------
+    f = open("pyPulsar.log","a")
+    lines=string+"\n"
+    f.writelines(lines)
+    f.close()
+    stringwarn="\n**** WARNING ****:  %s \n" % string
+    wx.LogMessage(' ')
+    wx.LogMessage(' ')
+    wx.LogMessage(stringwarn)
+    #write also on the debug output
+    if DEBUG: print '\n\n',stringwarn
+
+#------------------------------------------------------------------------------
 def write_string(string):
 #------------------------------------------------------------------------------
     WRITE_STRING(string)

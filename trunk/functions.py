@@ -640,7 +640,10 @@ class Simulation:
         
         if (verbose) :
             if not self.ABORT : WRITE_STRING("\nSaving of spectra data done.")
-        
+
+######################################
+## NUCLEUS AND SELECTION OF NUCLEUS ##
+######################################        
 
     #-----------------------------------
     def add_nucleus(self, nucleus=None):
@@ -681,10 +684,10 @@ class Simulation:
             self.ABORT=True
 
     #-----------------------------------------------------
-    def select_S_nucleus(self, nucleus=None):
+    def select_observed(self, nucleus=None):
     #-----------------------------------------------------
         """
-            Exactly equivalent to select_nucleus()
+            Exactly equivalent to select_nucleus() [this is the new form - more clear I think)
         """    
         if self.ABORT:
             return
@@ -692,7 +695,7 @@ class Simulation:
         self.select_nucleus(nucleus)
 
     #-----------------------------------------------------
-    def select_I_nucleus(self, nucleus=None):
+    def select_coupled(self, nucleus=None):
     #-----------------------------------------------------
         """
             Selection of the coupled nuclei   
@@ -703,13 +706,13 @@ class Simulation:
             return
 
         print "  "
-        DEBUG_MSG("SELECT_I_NUCLEUS ")
+        DEBUG_MSG("SELECT_COUPLED ")
         DEBUG_MSG("  Number of different nuclei :"+str(len(self.sample.nuclei)))
 
         #because we do not take into account homonuclear couplings, this number must be greater than 2 to continue
         #Stop process if there is not enough nucleus
         if len(self.sample.nuclei)<2:
-            WRITE_ERROR("No nucleus that can be coupled (HETERONUCLEAR) to "+self.S_channel+" have been found! define them before calling set_I_nucleus")
+            WRITE_ERROR("No nucleus that can be coupled (HETERONUCLEAR) to "+self.S_channel+" have been found! define them before calling set_coupled")
             self.ABORT=True
             return
         
@@ -720,7 +723,7 @@ class Simulation:
         
         #The command 'set_I_nucleus' was given without arguments: This is not allowed    
         if (nucleus is None or type(nucleus) is not types.InstanceType):
-            WRITE_ERROR("  No argument in set_I_nucleus or the argument is not a nucleus instance  : this is required ")
+            WRITE_ERROR("  No argument in set_coupled or the argument is not a nucleus instance  : this is required ")
             self.ABORT=True
             return
   
@@ -728,24 +731,26 @@ class Simulation:
 
         #check if the S nucleus was already defined
         if len(parameters.nucleus)<1:
-            WRITE_ERROR("  The definition of the S nucleus must be set before using select_I_nucleus:"+ \
-                        " define the observed S Nucleus, using select_S_nucleus or (select_nucleus)")
+            WRITE_ERROR("  The definition of the S nucleus must be set before using select_coupled:"+ \
+                        " define the observed S Nucleus, using select_observed (or select_nucleus)")
             self.ABORT=True
             return
 
         #Now validate the nucleus    
         index=nucleus.index
         coupled=nucleus.isotope
-        WRITE_STRING("  Selection of "+coupled+" index "+str(index))
+        WRITE_STRING(" ")
+        WRITE_STRING("  Selection of "+coupled+" index "+str(index+1))
         if coupled == self.S_channel:
             WRITE_ERROR("  The selected coupled nucleus can not be on the "+self.S_channel+" channel (only heteronuclear coupling allowed)")
             self.ABORT=True
             return
         else:
             #ok, it is an observed nuclei
-            DEBUG_MSG("  OK, the selected nucleus can be coupled")
+            DEBUG_MSG("  OK, it can be coupled to the current S nucleus")
             #Validation
-            self.sample.validate(observed,index,delta, abundance)   
+            abundance=None #### This is has to be discussed with Jean-Paul
+            self.sample.validate(coupled,index,0.0,abundance)   
         
     #-----------------------------------------------------
     def select_nucleus(self, nucleus=None):
@@ -755,7 +760,7 @@ class Simulation:
         arg:
             nucleus : an instance of the nucleus class (by default it is the S_channel but
                       it may be interesting to have a nucleus close in frequency like 51V when studying 23Na
-                    or an integer representing the index of an observed nuclei (index start at 0)
+                    or an integer representing the index of an observed nuclei (index start at 1)
         """
         if self.ABORT:
             return
@@ -782,30 +787,30 @@ class Simulation:
         if (nucleus is None):
             index=0
             observed=self.S_channel
-            WRITE_STRING("  No argument in set_nucleus : the first nucleus in '"+self.S_channel+"' list will be considered ")
+            WRITE_STRING("\tNo argument in set_nucleus : the first nucleus in '"+self.S_channel+"' list will be considered ")
                 
         # Ok, if we are here, the command was entered with an index or a Nucleus instance specification
         if type(nucleus) is types.IntType:
             # we specified an index  : in this case it can be only for observed nuclei
-            index=nucleus
+            index=nucleus-1  #internal index start at 0 
             observed=self.S_channel
-            WRITE_STRING("  Selection of "+observed+" index "+str(index))
+            WRITE_STRING("  Selection of "+observed+" with index "+str(index+1)+" in the list of observed nuclei")
             if self.get_numberofnuclei(self.S_channel)==0:
                 WRITE_ERROR("No observed nuclei defined!")
                 self.ABORT=True
                 return
             if index >= self.get_numberofnuclei(self.S_channel):
                 WRITE_ERROR("This nucleus index does not exist (maximum is "+ \
-                            str(self.get_numberofnuclei(self.S_channel)-1)+ " in the channel: "+ self.S_channel+\
+                            str(self.get_numberofnuclei(self.S_channel))+ " in the channel: "+ self.S_channel+\
                             "\n. Check the nucleus definition list!" + \
-                            "\n(Note: Index in list start at 0: if there is two nuclei: first nuclei has index 0 and the second has index 1)")
+                            "\n(Note: Index in nucleus lists start at 1: first nucleus entered has index 1, the second has index 2, and so on...)")
                 self.ABORT=True
                 return
         if type(nucleus) is types.InstanceType:
             # we specified a nucleus instance
             index=nucleus.index
             observed=nucleus.isotope
-            WRITE_STRING("  Selection of "+observed+" index "+str(index))
+            WRITE_STRING("Selection of "+observed+" index "+str(index+1))
             if observed == self.S_channel:
                 #ok, it is an observed nuclei
                 DEBUG_MSG("  OK, the selected nucleus can be observed")
@@ -821,12 +826,12 @@ class Simulation:
                 else:
                     # there is no I channel
                     # check if this nucleus is close enougth to S_channel to be observed (even partly).
-                    WRITE_STRING("  Abs. Larmor frequency of the this nucleus : "+str(abs(nucleus.nucleus["larmor"])))
-                    WRITE_STRING("  Frequency of the observed "+self.S_channel+" channel : "+str(isotopes[self.S_channel]["larmor"]))
+                    WRITE_STRING("\tAbs. Larmor frequency of the this nucleus : "+str(abs(nucleus.nucleus["larmor"])))
+                    WRITE_STRING("\tFrequency of the observed "+self.S_channel+" channel : "+str(isotopes[self.S_channel]["larmor"]))
                     delta = abs(nucleus.nucleus["larmor"]) - abs(isotopes[self.S_channel]["larmor"])
-                    WRITE_STRING("  Difference : "+str(delta)+ " MHz")
+                    WRITE_STRING("\tDifference : "+str(delta)+ " MHz")
                     if delta>5:
-                        WRITE_ERROR("  This frequency difference seems too large for taking into account this nucleus. It will not be calculated!")
+                        WRITE_ERROR("This frequency difference seems too large for taking into account this nucleus. It will not be calculated!")
                         self.ABORT=True
                         return
                     #ok we takes this delta into account
@@ -864,7 +869,156 @@ class Simulation:
             #if (verbose) : WRITE_STRING("\nNumber of nuclei:"+str(nb)) 
             return nb
         else: return 0
+
+######################
+## DIPOLAR COUPLING ##
+######################
+     
+    # indirect j coupling --------------------------------------------------------------
+    def set_indirect(self,index,second,j = 0,delta = 0,eta = 0,alpha = 0,beta = 0,gamma = 0):
+    #-----------------------------------------------------------------------------------
+        """
+        set_indirect -- 
+        'Set the indirect J coupling between a pair of nucleus'
+        args:
+            index - index of the first nucleus (defined previously by set_nucleus)
+                    Required to be one.
+            second - index of the second nucleus (defined previously by set_nucleus)
+            j - J coupling value
+            delta - ansotropy of J
+            alpha, beta, gamma - euler angles with respect to the molecular frame
+        """
+        if self.ABORT:
+            return
+
+        DEBUG_MSG("Set Indirect")
+        if parameters.nucleus == None: 
+            WRITE_STRING("\n*set_indirect*\nERROR: No nucleus were defined yet. Cannot set indirect j coupling'!\n")
+            WRITE_STRING(set_indirect.__doc__)
+            exit()
+        else:
+            if index != 1: 
+                WRITE_STRING("\n*set_indirect*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
+                WRITE_STRING("It has been automatically changed.")
+                index = 1
+            if second == 1:   
+                WRITE_STRING("\n*set_indirect*\nWARNING: the index of the second nucleus is required to be different of the first index!")
+                WRITE_STRING("It has been automatically changed to 'index+1'.")
+                second = index + 1
+            if second > len(parameters.nucleus): 
+                WRITE_STRING("\n*set_indirect*\nERROR: the second index does not correspond to an existing nucleus!\n")
+                WRITE_STRING(set_indirect.__doc__)
+                exit()
+        j = evaluate(j)
+        delta = evaluate(delta)
+        eta = evaluate(eta)
+        alpha = evaluate(alpha)
+        beta = evaluate(beta) 
+        gamma = evaluate(gamma)  
+        if parameters.indirect==None:
+            if (verbose) : WRITE_STRING("\nindirect J coupling:")
+            ar=[[index,second,j,delta,eta,alpha,beta,gamma]]   
+        else:
+            size=len(parameters.indirect) 
+            ar=[[0,0,0,0,0,0,0,0] for i in range(size+1)]
+            i=0
+            while i < size :
+                ar[i]=[int(parameters.indirect[i,0]),int(parameters.indirect[i,1]),parameters.indirect[i,2], parameters.indirect[i,3], parameters.indirect[i,4],parameters.indirect[i,5],parameters.indirect[i,6],parameters.indirect[i,7]]  #copy of the previous elements
+                i=i+1
+            ar[size]=[index,second,j,delta,eta,alpha,beta,gamma]       
+        parameters.indirect=ar                                          #allocate or reallocate and initialize       
+        size=len(parameters.indirect)
+        i=size-1
+        if (verbose) :
+            WRITE_STRING("\tIndirect J coupling ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,2])+" Hz")
+            if parameters.indirect[i,3]!=0 : WRITE_STRING("\tdelta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,3])+" Hz")
+            if parameters.indirect[i,3]!=0 : WRITE_STRING("\teta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,4]))
+            if parameters.indirect[i,3]!=0 : WRITE_STRING("\teuler J ("+str(index)+","+str(second)+"): ["+ str(parameters.indirect[i,5])+","+str(parameters.indirect[i,6])+","+str(parameters.indirect[i,7])+"]")     
+
+    # direct dipolar coupling -----------------------------------------
+    def set_dipole(self,index=None,dip=0,distance=0,alpha=0,beta=0,gamma=0):
+    #------------------------------------------------------------------
+        """
+        USAGE: 
+        set_dipole(index=0,dip=0,distance=0,alpha=0,beta=0,gamma=0)
+        'Set the direct dipole coupling between a pair of nucleus'
+        args:
+            index - index in the coupled nucleus list (defined previously by set_coupled)
+            dip - dipolar coupling value
+            distance - distance between nucleus in angstrom (will be used only if dip=0)
+            alpha, beta, gamma - euler angles with respect to the molecular frame
+        """
+        if self.ABORT:
+            return
+
+        DEBUG_MSG("SET_DIPOLE")
+
+        #Some nuclei need to be defined first, this is a fatal error
+        if parameters.nucleus is None: 
+            WRITE_ERROR("No observed and coupled nucleus were defined yet. Cannot set dipolar coupling'!\n")
+            self.ABORT=True
+            return
+        
+        else:
+            # At least one coupled nucleus need to be defined, this is a fatal error
+            if len(parameters.nucleus)==1:
+                WRITE_ERROR("There is no defined coupled nucleus: use set_coupled to define them!\n")
+                self.ABORT=True
+                return
+
+            # If the index is not specified select index=1
+            if index is None:   
+                WRITE_WARNING("the index of the coupled nucleus is not given in set_dipole!")
+                index=1
+                WRITE_STRING("\tthe first coupled nucleus (index=1) in the list of coupled nuclei will be used.")
+
+            #if the selected index does not exit : This is a fatal error.    
+            if index>len(parameters.nucleus) or index<1:
+                WRITE_ERROR("This index "+ index +" does not correspond to an existing coupled nucleus!\n")
+                self.ABORT=True
+                return
+
+        #ok, now we are here, without index error.
+        try:
+            dip=evaluate(dip)      
+            distance=evaluate(distance)
+            if (distance!=0) and (dip==0) : dip=dipole_from_distance(distance,parameters.nucleus[index-1,2],parameters.nucleus[second-1,2])
+            alpha=evaluate(alpha)
+            beta=evaluate(beta) 
+            gamma=evaluate(gamma)
+        except:
+            WRITE_ERROR("Something is wrong in the definition of the dipolar coupling parameters!")
+            WRITE_STRING(set_dipole.__doc__)
+            self.ABORT=True
+            return
+
+        if dip==0:
+            WRITE_WARNING("Dipolar coupling is found to be zero (dip=0 or distance too large)!")
+
+        if parameters.dipole==None:
+            if (verbose) : WRITE_STRING("\ndipolar coupling:")
+            ar=[[1,1+index,dip,distance,alpha,beta,gamma]]   
+        else:
+            size=len(parameters.dipole) 
+            ar=[[0,0,0,0,0,0,0] for i in range(size+1)]
+            #copy of the previous elements
+            i=0
+            while i < size :
+                ar[i]=[int(parameters.dipole[i,0]),int(parameters.dipole[i,1]),parameters.dipole[i,2], parameters.dipole[i,3], parameters.dipole[i,4],parameters.dipole[i,5],parameters.dipole[i,6]] 
+                i=i+1
+            ar[size]=[1,1+index,dip,distance,alpha,beta,gamma]       
+        parameters.dipole=ar                                          #allocate or reallocate and initialize       
+         
+        size=len(parameters.dipole)
+        i=size-1
+        if (verbose) : WRITE_STRING("\tdipolar coupling ("+str(index)+"): "+str(parameters.dipole[i,2])+" Hz")
+        if (verbose) : WRITE_STRING("\tpolar angles [alpha,beta] ("+str(index)+"): ["+ str(parameters.dipole[i,4])+","+str(parameters.dipole[i,5])+","+str(parameters.dipole[i,6])+"]")     
     
+
+###########################
+## PULSES and COHERENCES ##
+###########################
+        
     #------------------------
     def set_idealpulse(self):
     #------------------------
@@ -1122,153 +1276,7 @@ class Simulation:
         parameters.ctp=self.ctpall
         self.print_ctp()
 
-    # DIPOLAR COUPLINGS
-    #====================
-          
-    # dipole_from_distance-------------------
-    def dipole_from_distance(self,distance,f1,f2):
-    #----------------------------------------
-        """
-        'Compute dipolar coupling from distances' 
-        args:
-            distance - distances between nucleus
-            f1, f2 - larmor frequency of the two nuclei 
-        """
-        if self.ABORT:
-            return
-
-        DEBUG_MSG("dipole from distance")
-        field = parameters.spectrometerfield
-        h = 6.6260693e-34
-        mu0 = 4*pi*1.0e-7
-        f1 = f1/field  #conversion en gamma
-        f2 = f2/field
-        dipolar = abs(f1*f2*mu0*h/(distance*1.0e-10)**3/4/pi)
-        return dipolar
-     
-    # indirect j coupling --------------------------------------------------------------
-    def set_indirect(self,index,second,j = 0,delta = 0,eta = 0,alpha = 0,beta = 0,gamma = 0):
-    #-----------------------------------------------------------------------------------
-        """
-        set_indirect -- 
-        'Set the indirect J coupling between a pair of nucleus'
-        args:
-            index - index of the first nucleus (defined previously by set_nucleus)
-                    Required to be one.
-            second - index of the second nucleus (defined previously by set_nucleus)
-            j - J coupling value
-            delta - ansotropy of J
-            alpha, beta, gamma - euler angles with respect to the molecular frame
-        """
-        if self.ABORT:
-            return
-
-        DEBUG_MSG("Set Indirect")
-        if parameters.nucleus == None: 
-            WRITE_STRING("\n*set_indirect*\nERROR: No nucleus were defined yet. Cannot set indirect j coupling'!\n")
-            WRITE_STRING(set_indirect.__doc__)
-            exit()
-        else:
-            if index != 1: 
-                WRITE_STRING("\n*set_indirect*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
-                WRITE_STRING("It has been automatically changed.")
-                index = 1
-            if second == 1:   
-                WRITE_STRING("\n*set_indirect*\nWARNING: the index of the second nucleus is required to be different of the first index!")
-                WRITE_STRING("It has been automatically changed to 'index+1'.")
-                second = index + 1
-            if second > len(parameters.nucleus): 
-                WRITE_STRING("\n*set_indirect*\nERROR: the second index does not correspond to an existing nucleus!\n")
-                WRITE_STRING(set_indirect.__doc__)
-                exit()
-        j = evaluate(j)
-        delta = evaluate(delta)
-        eta = evaluate(eta)
-        alpha = evaluate(alpha)
-        beta = evaluate(beta) 
-        gamma = evaluate(gamma)  
-        if parameters.indirect==None:
-            if (verbose) : WRITE_STRING("\nindirect J coupling:")
-            ar=[[index,second,j,delta,eta,alpha,beta,gamma]]   
-        else:
-            size=len(parameters.indirect) 
-            ar=[[0,0,0,0,0,0,0,0] for i in range(size+1)]
-            i=0
-            while i < size :
-                ar[i]=[int(parameters.indirect[i,0]),int(parameters.indirect[i,1]),parameters.indirect[i,2], parameters.indirect[i,3], parameters.indirect[i,4],parameters.indirect[i,5],parameters.indirect[i,6],parameters.indirect[i,7]]  #copy of the previous elements
-                i=i+1
-            ar[size]=[index,second,j,delta,eta,alpha,beta,gamma]       
-        parameters.indirect=ar                                          #allocate or reallocate and initialize       
-        size=len(parameters.indirect)
-        i=size-1
-        if (verbose) :
-            WRITE_STRING("\tIndirect J coupling ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,2])+" Hz")
-            if parameters.indirect[i,3]!=0 : WRITE_STRING("\tdelta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,3])+" Hz")
-            if parameters.indirect[i,3]!=0 : WRITE_STRING("\teta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,4]))
-            if parameters.indirect[i,3]!=0 : WRITE_STRING("\teuler J ("+str(index)+","+str(second)+"): ["+ str(parameters.indirect[i,5])+","+str(parameters.indirect[i,6])+","+str(parameters.indirect[i,7])+"]")     
-
-    # direct dipolar coupling -----------------------------------------
-    def set_dipole(self,S,I,dip=0,distance=0,alpha=0,beta=0,gamma=0):
-    #------------------------------------------------------------------
-        """
-        -- set_dipole -- 
-        'Set the direct dipole coupling between a pair of nucleus'
-        args:
-##            index - index of the first nucleus (defined previously by set_nucleus)
-##                    Required to be one.
-##            second - index of the second nucleus (defined previously by set_nucleus)
-
-            dip - dipolar coupling value
-            distances - distance between nucleus in angstrom (used only if d=0)
-            alpha, beta, gamma - euler angles with respect to the molecular frame
-        """
-        if self.ABORT:
-            return
-
-        DEBUG_MSG("Set Dipole")
-        print parameters.nucleus
-        if parameters.nucleus==None: 
-            WRITE_STRING("\n*set_dipole*\nERROR: No observed nucleus were defined yet. Cannot set dipole coupling'!\n")
-            WRITE_STRING(set_dipole.__doc__)
-            exit()
-        else:
-            if index!=1: 
-                WRITE_STRING("\n*set_dipole*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
-                WRITE_STRING("It has been automatically changed.")
-                index=1
-            if second==1:   
-                WRITE_STRING("\n*set_dipole*\nWARNING: the index of the second nucleus is required to be different of the first index!")
-                WRITE_STRING("It has been automatically changed to 'index+1'.")
-                second=index+1
-            if second>len(parameters.nucleus): 
-                WRITE_STRING("\n*set_dipole*\nERROR: the second index does not correspond to an existing nucleus!\n")
-                WRITE_STRING(set_dipole.__doc__)
-                exit()
-        dip=evaluate(dip)
-        distance=evaluate(distance)
-        if (distance!=0) and (dip==0) : dip=dipole_from_distance(distance,parameters.nucleus[index-1,2],parameters.nucleus[second-1,2])
-        alpha=evaluate(alpha)
-        beta=evaluate(beta) 
-        gamma=evaluate(gamma)
-        if parameters.dipole==None:
-            if (verbose) : WRITE_STRING("\ndipolar coupling:")
-            ar=[[index,second,dip,distance,alpha,beta,gamma]]   
-        else:
-            size=len(parameters.dipole) 
-            ar=[[0,0,0,0,0,0,0] for i in range(size+1)]
-            #copy of the previous elements
-            i=0
-            while i < size :
-                ar[i]=[int(parameters.dipole[i,0]),int(parameters.dipole[i,1]),parameters.dipole[i,2], parameters.dipole[i,3], parameters.dipole[i,4],parameters.dipole[i,5],parameters.dipole[i,6]] 
-                i=i+1
-            ar[size]=[index,second,dip,distance,alpha,beta,gamma]       
-        parameters.dipole=ar                                          #allocate or reallocate and initialize       
-         
-        size=len(parameters.dipole)
-        i=size-1
-        if (verbose) : WRITE_STRING("\tdipolar coupling ("+str(index)+","+str(second)+"): "+str(parameters.dipole[i,2])+" Hz")
-        if (verbose) : WRITE_STRING("\tpolar angles [alpha,beta] ("+str(index)+","+str(second)+"): ["+ str(parameters.dipole[i,4])+","+str(parameters.dipole[i,5])+","+str(parameters.dipole[i,6])+"]")     
-       
+           
 #==============================================================================
 class Sample:
 #==============================================================================
@@ -1419,7 +1427,6 @@ class Nucleus:
         relative = self.nucleus["relative"]
         absolute = self.nucleus["absolute"]
 
-
         if parameters.nucleus == None:
             # if the 'parameters.nucleus' doesn't exist
             # create the temporary 'ar' array with a  single line
@@ -1509,12 +1516,13 @@ class Nucleus:
               
         if verbose:
             #Display the current parameters
-            #-------------------------------
+            #------------------------------
             WRITE_STRING("\nNUCLEUS: "+name)
             WRITE_STRING(  "------------")
             if self.index == 1 : WRITE_STRING("\t-This is the observed nucleus")
-            if self.index == 2 : WRITE_STRING("\t-This is the excited but non observed nucleus I \n\t-only ONE excited nucleus in this version-")  
-            if self.index > 2 :  WRITE_STRING("\t-additionnal NON-excited nucleus")  
+            if self.index == 2 : WRITE_STRING("\t-This is the excited but non observed nucleus I \n\t-only ONE excited nucleus in this version-")
+            if self.index > 2 :  WRITE_STRING("\t-additionnal NON-excited nucleus")
+            if self.index > 1 :  WRITE_STRING("\t  (For information, the index of this nucleus will be "+str(self.index-1)+" for future reference)")
             i = self.index-1
             spin=parameters.nucleus[i,1]
             if (spin*2 == int(spin)*2):
@@ -1775,180 +1783,27 @@ class PulseSequence:
             if (verbose) : pass #WRITE_STRING("coherence selection : Number of phases N="+str(nbphases)+", Required "+chr(127)+"p="+str(dp))  
         if nbphases==1:
             if (verbose) : pass #WRITE_STRING("no coherence selection")
+              
+#######################
+##  MODULE FUNCTIONS ##
+#######################
 
-##    # check coherence transfers        
-##    def check_ctp(self):
-##    #---------------
-##        #global nofpulses, ns, ctpall
-##        
-##        if (verbose) : WRITE_STRING( "\nLIST OF POSSIBLE COHERENCE TRANSFER PATHWAYS (CTP):")
-##
-##        self.nofpulses=len(parameters.pulse)
-##         
-##        if (self.nofpulses==1): 
-##            WRITE_STRING( "single pulse, no CTP selection possible")
-##            return
-##             
-##        self.ns=2*parameters.nucleus[0,1]  #maximum order
-##        pend=0
-##        ctp=range(self.nofpulses+1)
-##        self.ctpall=[]
-##        self.searchp(1,pend,ctp)
-##        
-##        if len(self.ctpall)==0 :
-##            WRITE_STRING("ERROR: ")
-##            WRITE_STRING( "No valid coherence transfer has been found:")
-##            WRITE_STRING( "  Check your coherence transfer settings!")
-##            WRITE_STRING( "   e.g., sum("+chr(127)+"p) must be " )
-##            WRITE_STRING( "         -1 for the observed spin S and 0 for spin I" )
-##            exit()
-##
-##        # store the result
-##        nctp=size(self.ctpall,0)
-##        self.ctpall.sort()
-##        if nctp!=pow(2*self.ns+1,self.nofpulses-1):
-##            if (verbose) : WRITE_STRING( "number of CTPs: " + nctp)
-##            self.print_ctp()
-##            parameters.ctp=self.ctpall
-##        else:
-##            if (verbose) : WRITE_STRING(" all allowed") 
-##            #TODO: check some other situation where it is not needed to
-##            #      make the calculation of all CTPs 
-##
-##    # print selected coherence transfers        
-##    def print_ctp(self):
-##    #---------------
-##        #global ctpall, ctpdict
-##        i=1
-##        self.ctpall.sort()
-##        #create a dictionnary (to reference esaly the various coherence)
-##        self.ctpdict={}
-##        for c in self.ctpall:
-##            self.ctpdict[i]=c
-##            strg = str(int(i)) + ":  {"  
-##            for j in range(size(self.ctpall,1)-1):
-##                item=c[j]
-##                if abs(item)<=999:
-##                    strg= strg + str(int(item)).rjust(3)+" ->"
-##                else:
-##                    strg= strg + "("+str(int(item-10000)).rjust(3)+","+str(-int(item-10000)).ljust(3)+") ->"
-##            strg=strg + " -1 }"
-##            if (verbose) : WRITE_STRING(strg)
-##            i=i+1
-##          
-##    # compress coherence transfers----------------------------------------------------        
-##    def compress_ctp(self):
-##    #------------------------------------------------------------------------------
-##        #global nofpulses, ns, ctpall
-##        
-##        if (verbose) : WRITE_STRING( "\nREDUCING NUMBER OF CTP :")
-##
-##        l=len(self.ctpall)
-##        if l==0 :
-##            WRITE_STRING( "ERROR: ")
-##            WRITE_STRING( "No valid coherence transfer has been found:")
-##            exit()
-##
-##        #look for pathway where two symmetrical coherences are found 
-##        for c1 in self.ctpall:
-##            #print "check ",c1  
-##            for c2 in self.ctpall:
-##                if c2!=c1:
-##                    #print "compare with ",c2     
-##                    for i in range(1,size(self.ctpall,1)-1):  
-##                        #look each items except the first one (always 0) and the last (-1).  
-##                        store=c2
-##                        store[i]=-store[i]
-##                        if store==c1:
-##                            #this two pathway are identical except for one element which is symetric
-##                            #we can reduce it to only one (we add 10000 to says that two symetric element
-##                            #must be retained)
-##                            self.ctpall.remove(c2)
-##                            self.ctpall.remove(c1)
-##                            store[i]=abs(store[i])+10000
-##                            self.ctpall.append(store)
-##                            #WRITE_STRING( store )
-##                        break
-##        if len(self.ctpall)== l :
-##            if (verbose) : WRITE_STRING( "No reduction possible." )   
-##        else:
-##            parameters.ctp=self.ctpall
-##            self.print_ctp()
-##        
-##    # searchp----------------------------------------------------------------------
-##    def searchp(self,nc,pend,ctpi):
-##    #------------------------------------------------------------------------------
-##        """
-##        recursive function
-##        used by check_ctp
-##        """  
-##        #global nofpulses, ns, ctpall
-##        ctpi[nc-1]=pend
-##        if nc==(self.nofpulses+1):  
-##            if pend==-1 and nc==(self.nofpulses+1):
-##                c=[]
-##                for i in ctpi:
-##                    c.append(i)
-##                self.ctpall.append(c)
-##            return
-##        else:  
-##            dp=parameters.coher[nc-1,1]
-##            nbphases=parameters.coher[nc-1,2]
-##            if dp==999 :   #all jumps allowed
-##                dp=1 
-##                nbphases=1
-##            for n in range(-int(3*self.ns),int(3*self.ns)):
-##                p=pend+dp+nbphases*n
-##                if p<=self.ns and p>=-self.ns :
-##                    self.searchp(nc+1, p,ctpi)
-##             
-##    # remove_ctp-------------------------------------------------------------------
-##    def remove_ctp(self,index):
-##    #------------------------------------------------------------------------------
-##        """ remove_ctp : to remove one or more ctp in the list
-##            arg: index is a scalar
-##                 or a list in the format (index1, index2...)"""
-##        #global ctpdict, ctpall
-##        if (verbose) : WRITE_STRING( "\nREMOVING CTP"+str(index))
-##        # here the dictionnary is useful
-##        #(because we cannot know easily the order of the list element)
-##        try:
-##            for i in index:    
-##                del self.ctpdict[i]
-##        except:
-##            try:
-##                del self.ctpdict[index]  #if list is a single number     
-##            except:
-##                WRITE_STRING( "ERROR in the remove_ctp command")
-##                WRITE_STRING( self.remove_ctp.__doc__)
-##        self.ctpall=ctpdict.values()
-##        parameters.ctp=self.ctpall
-##        self.print_ctp()
-##
-##    # set ctp----------------------------------------------------------------------
-##    def set_ctp(self,list):
-##    #------------------------------------------------------------------------------
-##        """ create one CTP(s) from a list of value """
-##        #global nofpulses, ns, ctpall
-##        if (verbose) : WRITE_STRING( "\nADDING A COHERENCE TRANSFER PATHWAY: ")
-##        if len(list)!= self.nofpulses+1:
-##            WRITE_STRING( "ERROR: len of the list is not correct.")
-##            WRITE_STRING( "Must be number of pulse+1")
-##            exit()
-##        if list[0]!=0 and list[self.nofpulses]!=-1:   
-##            WRITE_STRING( "ERROR: List must start with 0 end ending with -1")
-##            exit()
-##           
-##        self.ctpall.append(list)
-##        parameters.ctp=self.ctpall
-##        self.print_ctp()
-
-
-                
-
-#  MODULE FUNCTIONS
-#==================
-
+def dipole_from_distance(distance,f1,f2):
+#----------------------------------------
+        """
+        'Compute dipolar coupling from distances' 
+        args:
+            distance - distances between nucleus
+            f1, f2 - larmor frequency of the two nuclei 
+        """
+        field = parameters.spectrometerfield
+        h = 6.6260693e-34
+        mu0 = 4*pi*1.0e-7
+        f1 = f1/field  #conversion en gamma
+        f2 = f2/field
+        dipolar = abs(f1*f2*mu0*h/(distance*1.0e-10)**3/4/pi)
+        return dipolar
+    
 def evaluate(st,isppm=False):
 #----------------------------
     """

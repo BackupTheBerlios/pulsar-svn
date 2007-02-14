@@ -1,4 +1,4 @@
-# CrossPolarization.pul
+# DipolarCoupling.pul
 # PULSAR Project:
 #
 # version=1.0
@@ -27,7 +27,7 @@
 
 # start a new simulation
 #-----------------------
-sim1=Simulation(verbose=True,debug=True)
+sim1=Simulation(verbose=True, debug=True)
 
 # Set observation channel
 #------------------------
@@ -37,7 +37,7 @@ sim1.set_channel("27Al","1H")      #define both channels
 #-------------------- 
 #nucleus with index 0
 Al=Nucleus("27Al")   
-Al.set_quadrupole(cq="1.5 mhz", eta=0.3)     
+Al.set_quadrupole(cq="0.1 mhz", eta=0.3)     
 Al.set_lb("100 Hz")          
 sim1.add_nucleus(Al)        
 
@@ -52,8 +52,8 @@ sim1.select_observed(Al)
 
 #select coupled
 #---------------
-sim1.select_coupled(H)
-sim1.set_dipole(dip="10000 Hz")
+sim1.select_coupled(H) #index 1 in coupled List
+sim1.set_dipole(1,dip="10000 Hz")
 
 # simulation setting
 #-------------------            
@@ -65,16 +65,13 @@ sim1.set_accuracy(4)
 
 # Pulse sequence
 #---------------
-for i in range(2):
-    sim1.reset_pulse()
-    sim1.set_pulse(2.5,powerI=100*kHz,phaseI=90) #90° Y pulse in channel I
-    sim1.set_pulse(100,powerS=100*kHz,powerI=100*kHz,phaseS=180*i) #simultaneous X pulses (Contact)
+sim1.reset_pulse()
+sim1.set_pulse(0.3,powerS=100*kHz) #90° Y pulse in channel S
     
-    # Run simulations
-    #----------------
-    sim1.execute_pulsar()  
-    sim1.store_spectrum()   
+# Run simulations
+#----------------
+sim1.execute_pulsar()  
+sim1.store_spectrum()   
 
 #Write spectra
-sim1.sum_spectra()
 sim1.write_spectra()
