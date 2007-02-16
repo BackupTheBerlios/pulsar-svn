@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "pyPulsar"
-#define MyAppVerName "pyPulsar-0.1"
+#define MyAppVerName "pyPulsar-0.1.1"
 #define MyAppURL "http://www-lcs.ensicaen.fr/pyPulsar"
 #define MyAppExeName "pyPulsar.exe"
 
@@ -30,7 +30,7 @@ ChangesAssociations=true
 WizardImageFile=D:\program_files\Pulsar\trunk\Images\installer.bmp
 WizardSmallImageFile=D:\program_files\Pulsar\trunk\Images\installer-small.bmp
 WizardImageStretch=true
-VersionInfoVersion=0.1.0
+VersionInfoVersion=0.1.1
 VersionInfoCopyright=2006-2007 C. Fernandez & J.P. Amoureux
 AppCopyright=2006-2007 C. Fernandez & J.P. Amoureux
 

@@ -1,0 +1,11 @@
+Al1=Nucleus("27Al")   
+Al1.set_quadrupole(cq="1.5 mhz", eta=0.3)    
+Al1.set_chemicalshift(iso="2 ppm") 
+Al1.set_lb("10 Hz") 
+Al1.set_concentration(0.75)          
+self.add_nucleus(Al1)
+
+H1=Nucleus("1H")   
+self.add_nucleus(H1)
+
+self.dict=self.sample.nuclei

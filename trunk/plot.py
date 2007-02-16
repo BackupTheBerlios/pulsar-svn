@@ -185,12 +185,10 @@ class PlotFigure(wx.Window):
             self.ydata = []
             self.spec = []
             
-            # read TYPE 
-            line=f.readline()
+            line=f.readline() # read TYPE
             DEBUG_MSG(rtn(line))
 
-            # read YDATA or XDATA
-            line=f.readline()  
+            line=f.readline()  # read YDATA or XDATA
             DEBUG_MSG(rtn(line))
 
         except: # There was an error
@@ -198,18 +196,25 @@ class PlotFigure(wx.Window):
             f.close()
             return false
 
-        if string.find(line,"YDATA")>-1: # check if is a YDATA directive
+        if string.find(line,"YDATA")>-1: # check if there is a YDATA directive
             try:     
                 self.label=string.join(string.split(line)[1:],' ')
+                print self.label
+                print ni
                 for j in range(ni):
                     line=f.readline()
-                    self.ydata.append(float(line))
-                line=f.readline()
-                DEBUG_MSG(rtn(line))
+                    if not isinstance(line,str):
+                        self.ydata.append(float(line))
+                    else:
+                        self.ydata.append(line)
             except:
-                WRITE_STRING("***ERROR***: bad YDATA labels")
+                WRITE_ERROR("bad YDATA labels")
                 f.close()
                 return false
+
+            line=f.readline()
+            DEBUG_MSG(rtn(line)) # read XDATA
+
         try:
             for j in range(ni):
                 DEBUG_MSG("\treading spectrum"+str(j+1))
@@ -227,7 +232,7 @@ class PlotFigure(wx.Window):
             line=f.readline()       
             DEBUG_MSG(rtn(line))
             if string.find(line,"END")>-1:
-                    DEBUG_MSG("reading file success!")
+                DEBUG_MSG("reading file success!")
         except:
             WRITE_STRING("***ERROR***: problem when reading X,Y data in the *.spe file!")
             f.close()
@@ -342,7 +347,11 @@ class PlotFigure(wx.Window):
                     if self.ydata:
                         if i%spacing==0:
                             xticks.append(float(self.n/2+i*self.n)/self.n)
-                            xtickslabel.append(string.strip(str('%10.3f'%self.ydata[i])))
+                            if not isinstance(self.ydata[i],str):
+                                xtickslabel.append(string.strip(str('%10.3f'%float(self.ydata[i]))))
+                            else:
+                                xtickslabel.append(string.strip(str('%s'%self.ydata[i])))
+                            
                     Y=[k.real for k in self.spec[i]]
                     self.plotdata.plot(X, array(Y))
                     count += 1

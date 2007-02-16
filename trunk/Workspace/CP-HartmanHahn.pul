@@ -1,3 +1,4 @@
+
 # CP-HartmanHahn.pul
 # PULSAR Project:
 #
@@ -27,7 +28,7 @@
 
 # start a new simulation
 #-----------------------
-sim1=Simulation(verbose=False,debug=False)
+sim1=Simulation() #verbose=true,debug=true)
 
 # Set observation channel
 #------------------------
@@ -59,28 +60,28 @@ sim1.set_dipole(1, dip="5000 Hz")
 sim1.set_spinningspeed("25 kHz") 
 sim1.set_sw("10 kHz")             
 sim1.set_detect(CENTRAL)
-sim1.set_npts("1 K")
-sim1.set_accuracy(4)
+sim1.set_npts(128)
+sim1.set_accuracy(3)
 
 # Pulse sequence
 #---------------
 sim1.reset_spectra()                #reset spectra to zero
 
 p15=250*usec
-for plS in arange(50,150,.5):
+for plS in arange(50,151,1):
     sim1.clearspectrum(True)
-    for stp in [0,180]:
+    for ph in [0,180]:
         sim1.reset_pulse()
-        # spin temperature inversion phase: stp
-        sim1.set_pulse(2.5,powerI=100*kHz,phaseI=stp)                   #90° Y pulse in channel I (plus 'stp' a phase for spin temperature inversion)
+        # spin temperature inversion phase: ph
+        sim1.set_pulse(2.5,powerI=100*kHz,phaseI=ph) #90° Y pulse in channel I (plus 'stp' a phase for spin temperature inversion)
         sim1.set_pulse(p15,powerS=plS*kHz,phaseS=90,powerI=100*kHz,phaseI=90)    #simultaneous X pulses (Contact)
-        sim1.set_rcph(stp) #the receiver has to follow the phase 'stp'
+        sim1.set_rcph(ph) #the receiver has to follow the phase 'stp'
     
         # Run simulations
         #----------------
         sim1.execute_pulsar()  
         sim1.clearspectrum(False)       #keep the spectra in memory
-    sim1.store_spectrum(data=plS,label="rf on channel S (kHz)") 
+    sim1.store_spectrum(data=plS,label="rf(kHz)") 
   
 #Write spectra
 sim1.write_spectra()

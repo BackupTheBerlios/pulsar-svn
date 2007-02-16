@@ -337,7 +337,7 @@ class Simulation:
         except:
             self.field=0
         if self.field == 0 :
-            WRITE_STRING("\n\terror in set_field: reset to default 9.395*tesla\n")
+            WRITE_WARNING("'set_field': reset to default 9.395*tesla\n")
             self.field = 9.395*tesla
         self.protonfrequency = self.field*gamma_H
 
@@ -365,7 +365,7 @@ class Simulation:
         try:
             self.protonfrequency = abs(evaluate(protonfrequency))
         except:
-            WRITE_STRING("\n\tERROR in set_proton_frequency: reset to default 400*mhz\n")
+            WRITE_WARNING("'set_protonfrequency': reset to default 400*mhz\n")
             self.protonfrequency = 400*mhz
         self.field = self.protonfrequency/gamma_H
         
@@ -381,7 +381,7 @@ class Simulation:
         DEBUG_MSG("SET_SPINNINGSPEED")
         self.spinningspeed = abs(evaluate(spinningspeed))
         if self.spinningspeed<1*hz and self.nsb > 0:
-            WRITE_STRING("\n\tWARNING: the spinning speed being 0, nsb has also been set to 0\n")
+            WRITE_WARNING("the spinning speed being 0, nsb has also been set to 0\n")
             self.nsb = 0
 
     #------------------------------------------
@@ -415,10 +415,11 @@ class Simulation:
                 width=min(self.sw*1.1,wQ*(2*s-1.)*1.25)
                 self.nsb = int(width/self.spinningspeed/2.)
             except:
-                WRITE_STRING("\n\t*** ERROR *** the 'AUTO' flag in 'set_nsb' can be used only after a nucleus S has been defined")
-                WRITE_STRING("\t (Additionnaly, the sw (using set_sw) and the spinningspeed (using set_spinningspeed) must ")
-                WRITE_STRING("\t  also be defined prior to this calculation)\n")
+                WRITE_ERROR("The 'AUTO' flag in 'set_nsb' can be used only after a nucleus S has been defined" \
+                    +"\n\t (Additionnaly, the sw (using set_sw) and the spinningspeed (using set_spinningspeed) must " \
+                    +"\n\t  also be defined prior to this calculation)\n")
                 self.ABORT=True
+                return
                 
         elif self.nsb == -998 and self.spinningspeed > 0.1: 
             # calculate the maximum number of spinning sidebands for satellite transition
@@ -428,7 +429,7 @@ class Simulation:
                 width=wQ*(2*s-1.)*1.25
                 self.nsb = int(width/self.spinningspeed/2.)     
             except:
-                WRITE_STRING("error with FULL calculation")
+                WRITE_WARNING("error with 'FULL' calculation")
         else:
             if self.spinningspeed<0.1:
                 self.nsb = 0
@@ -508,7 +509,7 @@ class Simulation:
             spins = parameters.nucleus[0,1]
             if spins<1 : self.nall = 0
         except:
-            WRITE_STRING("\n\t!!! ERROR: 'set_detect' can be used only after a nucleus S has been defined\n")
+            WRITE_ERROR("'set_detect' can be used only after a nucleus S has been defined\n")
             self.ABORT=True
     
     #------------------------------
@@ -523,33 +524,48 @@ class Simulation:
         DEBUG_MSG("SET_QFACTOR")
         self.qfactor = max(evaluate(qfactor),0.0001)
 
-    #-----------------------------
-    def store_spectrum(self,data="undefined",label=""):
-    #--------------------------------------------------
+    #---------------------------------------------
+    def store_spectrum(self,data=None,label=None):
+    #---------------------------------------------
         """
-        add a spectrum to the collection of spectra  
+            Store a spectrum in the collection
+            - data, numeric or string
+            - label, string
         """
         if self.ABORT:
             return
         
-        DEBUG_MSG("Store Spectrum")
+        DEBUG_MSG("STORE_SPECTRUM")
         spec = array(parameters.spec)
+
+        if len(spec)==0: #nothing to add
+            WRITE_ERROR("No spectrum to store!")
+            self.ABORT=True
+            return
+
         s = self.collection_spectra
         self.collection_spectra.append(spec)
-        if data != "undefined":
+        
+        if type(data) is not types.NoneType:
+            if not (isinstance(data,int) or isinstance(data,long) or isinstance(data,float)) : data=str(data)
             self.collection_data.append(data)      #identifier
-            DEBUG_MSG("Stored data: "+str(data))
-        if label !="":
+            DEBUG_MSG("Stored data: "+ str(data))
+        else:
+            data='undefined'
+            
+        if type(label) is types.StringType:
             self.collection_label=label
             DEBUG_MSG("Stored label: "+label)
         else:
-            self.collection_label="variable index"            
+            self.collection_label="variable"
+            
         self.current_spectrum = array(spec)
         self.list_lb.append(self.lb)
         self.list_gb.append(self.gb)
         self.list_concentration.append(self.concentration)
         
-        WRITE_STRING("\nA spectrum has been added to collection spectra ("+str(len(self.collection_spectra))+")") 
+        WRITE_STRING("\nA spectrum has been added to the collection of spectra ("+str(len(self.collection_spectra))+")")
+        WRITE_STRING("\t\t"+self.collection_label+" : "+str(data)) 
 
     #-----------------------------------
     def clearspectrum(self, clear=True):
@@ -644,8 +660,9 @@ class Simulation:
                 spec= ifft(fid,None, -1,1)
 
             except:
-                WRITE_STRING("ERROR in fft")
+                WRITE_ERROR("'write_spectra: fft problems")
                 self.ABORT=True
+                return
 
             for i in range(len(spec)):
                 line = string.strip(repr(spec[i].imag))+" "+string.strip(repr(spec[i].real))+'\n'
@@ -682,11 +699,23 @@ class Simulation:
         """
         if self.ABORT:
             return
+
+        # check if Nucleus is an instance of class Nucleus
+        if type(nucleus) is not types.InstanceType:
+            WRITE_ERROR("'add_nucleus' - check the argument of the function: must be a Nucleus instance")
+            self.ABORT=True
+            return
+        
+        # check if ABORT in class nucleus was not set
+        if nucleus.ABORT:
+            self.ABORT=True
+            return
         
         #DEBUG_MSG("ADD NUCLEUS")
         if not nucleus:
-            WRITE_ERROR("in add_nucleus - check the argument of the function")
+            WRITE_ERROR("'add_nucleus' - check the argument of the function")
             self.ABORT=True
+            return
             
         # we add this nucleus to the sample
         self.sample.add_nucleus(nucleus)
@@ -708,7 +737,7 @@ class Simulation:
                 self.I_channel=channel[1]
                 DEBUG_MSG("SET_CHANNEL : "+channel[1])
         except:
-            WRITE_STRING("\nERROR in set_channel")
+            WRITE_ERROR("'set_channel' problem")
             self.ABORT=True
 
     #-----------------------------------------------------
@@ -735,7 +764,7 @@ class Simulation:
 
         DEBUG_MSG("  ")
         DEBUG_MSG("SELECT_COUPLED ")
-        DEBUG_MSG("  Number of different nuclei :"+str(len(self.sample.nuclei)))
+        DEBUG_MSG("Number of different nuclei :"+str(len(self.sample.nuclei)))
 
         #because we do not take into account homonuclear couplings, this number must be greater than 2 to continue
         #Stop process if there is not enough nucleus
@@ -746,12 +775,12 @@ class Simulation:
         
         #First we have to handle a possible error arising when no observed channels have been defined
         if not self.S_channel: self.S_channel=self.sample.observed       
-        DEBUG_MSG("  Observed channel :"+self.S_channel)
+        DEBUG_MSG("Observed channel :"+self.S_channel)
 
         
         #The command 'set_I_nucleus' was given without arguments: This is not allowed    
         if (nucleus is None or type(nucleus) is not types.InstanceType):
-            WRITE_ERROR("  No argument in set_coupled or the argument is not a nucleus instance  : this is required ")
+            WRITE_ERROR("No argument in set_coupled or the argument is not a nucleus instance  : this is required ")
             self.ABORT=True
             return
   
@@ -759,23 +788,22 @@ class Simulation:
 
         #check if the S nucleus was already defined
         if len(parameters.nucleus)<1:
-            WRITE_ERROR("  The definition of the S nucleus must be set before using select_coupled:"+ \
-                        " define the observed S Nucleus, using select_observed (or select_nucleus)")
+            WRITE_ERROR("The definition of the S nucleus must be set before using select_coupled: \n"+ \
+                        "define the observed S Nucleus, using select_observed (or select_nucleus)")
             self.ABORT=True
             return
 
         #Now validate the nucleus    
         index=nucleus.index
         coupled=nucleus.isotope
-        WRITE_STRING(" ")
-        WRITE_STRING("  Selection of "+coupled+" index "+str(index+1))
+        WRITE_STRING("Selection of "+coupled+" index "+str(index+1))
         if coupled == self.S_channel:
-            WRITE_ERROR("  The selected coupled nucleus can not be on the "+self.S_channel+" channel (only heteronuclear coupling allowed)")
+            WRITE_ERROR("The selected coupled nucleus can not be on the "+self.S_channel+" channel (only heteronuclear coupling allowed)")
             self.ABORT=True
             return
         else:
             #ok, it is an observed nuclei
-            DEBUG_MSG("  OK, it can be coupled to the current S nucleus")
+            DEBUG_MSG("OK, it can be coupled to the current S nucleus")
             #Validation
             abundance=None #### This is has to be discussed with Jean-Paul
             self.sample.validate(coupled,index,0.0,abundance)   
@@ -798,7 +826,7 @@ class Simulation:
         
         DEBUG_MSG("  ")
         DEBUG_MSG("SELECT_NUCLEUS ")
-        DEBUG_MSG("  Number of defined and different nuclei :"+str(len(self.sample.nuclei)))
+        DEBUG_MSG("Number of defined and different nuclei :"+str(len(self.sample.nuclei)))
 
         #Stop process if there is no nucleus
         if len(self.sample.nuclei)==0:
@@ -815,14 +843,14 @@ class Simulation:
         if (nucleus is None):
             index=0
             observed=self.S_channel
-            WRITE_STRING("\tNo argument in set_nucleus : the first nucleus in '"+self.S_channel+"' list will be considered ")
+            WRITE_STRING("No argument in set_nucleus : the first nucleus in '"+self.S_channel+"' list will be considered ")
                 
         # Ok, if we are here, the command was entered with an index or a Nucleus instance specification
         if type(nucleus) is types.IntType:
             # we specified an index  : in this case it can be only for observed nuclei
             index=nucleus-1  #internal index start at 0 
             observed=self.S_channel
-            WRITE_STRING("  Selection of "+observed+" with index "+str(index+1)+" in the list of observed nuclei")
+            WRITE_STRING("Selection of "+observed+" with index "+str(index+1)+" in the list of observed nuclei")
             if self.get_numberofnuclei(self.S_channel)==0:
                 WRITE_ERROR("No observed nuclei defined!")
                 self.ABORT=True
@@ -841,7 +869,7 @@ class Simulation:
             WRITE_STRING("Selection of "+observed+" index "+str(index+1))
             if observed == self.S_channel:
                 #ok, it is an observed nuclei
-                DEBUG_MSG("  OK, the selected nucleus can be observed")
+                DEBUG_MSG("OK, the selected nucleus can be observed")
 
             else:
                 if observed == self.I_channel:
@@ -866,8 +894,8 @@ class Simulation:
                     delta=delta*mhz
                     abundance=isotopes[nucleus.isotope]["abundance"]   #### TO change to take into account possible enrichment
    
-        DEBUG_MSG("  Observed nuclei index :"+str(index))
-        DEBUG_MSG("  Observed nucleus isotope:"+observed)
+        DEBUG_MSG("Observed nuclei index :"+str(index))
+        DEBUG_MSG("Observed nucleus isotope:"+observed)
               
         #Validation
         self.sample.validate(observed,index,delta, abundance)
@@ -898,20 +926,61 @@ class Simulation:
             return nb
         else: return 0
 
+    #-------------------------------------------------------------
+    def import_sample(self,file=None,*only):
+    #-------------------------------------------------------------
+        """
+            import the a file with sample definition (TO WORK ON IT... There is too many limitations!)
+        """
+        if self.ABORT:
+            return
+
+        if file is None:
+            WRITE_WARNING("File name to load was not given in the arguments")
+            return
+
+        try:
+            f = open("Workspace\\"+file,"r")
+        except:    
+            WRITE_ERROR("When opening file: '"+file+"'")
+            self.ABORT=True
+            return
+        
+        try:       
+            lines=f.readlines()
+        except:
+            WRITE_ERROR("When reading file: '"+file+"'")
+            self.ABORT=True
+            return
+            
+        try:
+            for line in lines:
+                exec(line)
+        except:
+            WRITE_ERROR("When executing line: '"+line+"' in file: '"+file+"'")
+            self.ABORT=True
+            return
+
+        print len(self.sample.nuclei)
+        print self.sample.nuclei
+        
+        f.close()
+
+
+
+
 ######################
 ## DIPOLAR COUPLING ##
 ######################
      
     # indirect j coupling --------------------------------------------------------------
-    def set_indirect(self,index,second,j = 0,delta = 0,eta = 0,alpha = 0,beta = 0,gamma = 0):
+    def set_indirect(self,index=None,j = 0,delta = 0,eta = 0,alpha = 0,beta = 0,gamma = 0):
     #-----------------------------------------------------------------------------------
         """
         set_indirect -- 
         'Set the indirect J coupling between a pair of nucleus'
         args:
-            index - index of the first nucleus (defined previously by set_nucleus)
-                    Required to be one.
-            second - index of the second nucleus (defined previously by set_nucleus)
+            index- index of the coupled nucleus
             j - J coupling value
             delta - ansotropy of J
             alpha, beta, gamma - euler angles with respect to the molecular frame
@@ -919,50 +988,70 @@ class Simulation:
         if self.ABORT:
             return
 
-        DEBUG_MSG("Set Indirect")
-        if parameters.nucleus == None: 
-            WRITE_STRING("\n*set_indirect*\nERROR: No nucleus were defined yet. Cannot set indirect j coupling'!\n")
-            WRITE_STRING(set_indirect.__doc__)
-            exit()
+        DEBUG_MSG("SET INDIRECT")
+        #Some nuclei need to be defined first, this is a fatal error
+        if parameters.nucleus is None: 
+            WRITE_ERROR("No observed and coupled nucleus were defined yet. Cannot set dipolar coupling'!\n")
+            self.ABORT=True
+            return
+        
         else:
-            if index != 1: 
-                WRITE_STRING("\n*set_indirect*\nWARNING: the index of the first nucleus is required to be 1(for the moment)!")
-                WRITE_STRING("It has been automatically changed.")
-                index = 1
-            if second == 1:   
-                WRITE_STRING("\n*set_indirect*\nWARNING: the index of the second nucleus is required to be different of the first index!")
-                WRITE_STRING("It has been automatically changed to 'index+1'.")
-                second = index + 1
-            if second > len(parameters.nucleus): 
-                WRITE_STRING("\n*set_indirect*\nERROR: the second index does not correspond to an existing nucleus!\n")
-                WRITE_STRING(set_indirect.__doc__)
-                exit()
-        j = evaluate(j)
-        delta = evaluate(delta)
-        eta = evaluate(eta)
-        alpha = evaluate(alpha)
-        beta = evaluate(beta) 
-        gamma = evaluate(gamma)  
+            # At least one coupled nucleus need to be defined, this is a fatal error
+            if len(parameters.nucleus)==1:
+                WRITE_ERROR("There is no defined coupled nucleus: use set_coupled to define them!\n")
+                self.ABORT=True
+                return
+
+            # If the index is not specified select index=1
+            if index is None:   
+                WRITE_WARNING("the index of the coupled nucleus is not given in set_indirect!")
+                index=1
+                WRITE_STRING("\tthe first coupled nucleus (index=1) in the list of coupled nuclei will be used.")
+
+            #if the selected index does not exit : This is a fatal error.    
+            if index>len(parameters.nucleus) or index<1:
+                WRITE_ERROR("This index "+ index +" does not correspond to an existing coupled nucleus!\n")
+                self.ABORT=True
+                return
+
+        try:
+            j=evaluate(j)      
+            delta = evaluate(delta)
+            eta = evaluate(eta)
+            alpha=evaluate(alpha)
+            beta=evaluate(beta) 
+            gamma=evaluate(gamma)
+        except:
+            WRITE_ERROR("Something is wrong in the definition of the scalar coupling parameters!")
+            WRITE_STRING(set_indirect.__doc__)
+            self.ABORT=True
+            return
+
+        
+        if j==0:
+            WRITE_WARNING("Scalar J coupling is found to be zero!")
+
         if parameters.indirect==None:
             if (verbose) : WRITE_STRING("\nindirect J coupling:")
-            ar=[[index,second,j,delta,eta,alpha,beta,gamma]]   
+            ar=[[1,1+index,j,delta,eta,alpha,beta,gamma]]   
         else:
             size=len(parameters.indirect) 
-            ar=[[0,0,0,0,0,0,0,0] for i in range(size+1)]
+            ar=[[0,0,0,0,0,0,0] for i in range(size+1)]
+            #copy of the previous elements
             i=0
             while i < size :
                 ar[i]=[int(parameters.indirect[i,0]),int(parameters.indirect[i,1]),parameters.indirect[i,2], parameters.indirect[i,3], parameters.indirect[i,4],parameters.indirect[i,5],parameters.indirect[i,6],parameters.indirect[i,7]]  #copy of the previous elements
                 i=i+1
-            ar[size]=[index,second,j,delta,eta,alpha,beta,gamma]       
+            ar[size]=[1,1+index,dip,delta,eta,alpha,beta,gamma]       
         parameters.indirect=ar                                          #allocate or reallocate and initialize       
         size=len(parameters.indirect)
         i=size-1
         if (verbose) :
-            WRITE_STRING("\tIndirect J coupling ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,2])+" Hz")
+            WRITE_STRING("\tIndirect J coupling ("+str(index)+"): "+str(parameters.indirect[i,2])+" Hz")
             if parameters.indirect[i,3]!=0 : WRITE_STRING("\tdelta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,3])+" Hz")
             if parameters.indirect[i,3]!=0 : WRITE_STRING("\teta J ("+str(index)+","+str(second)+"): "+str(parameters.indirect[i,4]))
             if parameters.indirect[i,3]!=0 : WRITE_STRING("\teuler J ("+str(index)+","+str(second)+"): ["+ str(parameters.indirect[i,5])+","+str(parameters.indirect[i,6])+","+str(parameters.indirect[i,7])+"]")     
-
+    
     # direct dipolar coupling -----------------------------------------
     def set_dipole(self,index=None,dip=0,distance=0,alpha=0,beta=0,gamma=0):
     #------------------------------------------------------------------
@@ -1143,11 +1232,13 @@ class Simulation:
             WRITE_ERROR( "The length of the submitted list of coherence is not correct." \
                           +"\n       It must be the (number of pulse) -> "+str(self.nofpulses)+"+1")
             self.ABORT=True
+            return
             
         if list[0]!=0 or list[len(list)-1]!=-1:   
             WRITE_ERROR( "List must start with 0 end ending with -1")
             self.ABORT=True
-           
+            return
+        
         self.ctpall.append(list)
         parameters.ctp=self.ctpall
         self.print_pathways()
@@ -1197,12 +1288,11 @@ class Simulation:
         self.searchp(1,pend,ctp)
         
         if len(self.ctpall)==0 :
-            WRITE_STRING("ERROR: ")
-            WRITE_STRING( "No valid coherence transfer has been found:")
-            WRITE_STRING( "  Check your coherence transfer settings!")
-            WRITE_STRING( "   e.g., sum("+chr(127)+"p) must be " )
-            WRITE_STRING( "         -1 for the observed spin S and 0 for spin I" )
+            WRITE_ERROR("No valid coherence transfer has been found:"
+                       +"\n\t  Check your coherence transfer settings!"
+                       +"\n\t   e.g., sum("+chr(127)+"p) must be -1 for the observed spin S and 0 for spin I" )
             self.ABORT=true
+            return
 
         # store the result
         nctp=size(self.ctpall,0)
@@ -1229,9 +1319,9 @@ class Simulation:
 
         l=len(self.ctpall)
         if l==0 :
-            WRITE_STRING( "ERROR: ")
-            WRITE_STRING( "No valid coherence transfer has been found:")
+            WRITE_ERROR( "No valid coherence transfer has been found:")
             self.ABORT=True
+            return
 
         #look for pathway where two symmetrical coherences are found 
         for c1 in self.ctpall:
@@ -1309,7 +1399,7 @@ class Simulation:
             try:
                 del self.ctpdict[index]  #if list is a single number     
             except:
-                WRITE_STRING( "ERROR in the remove_ctp command")
+                WRITE_ERROR( "'remove_ctp' command")
                 WRITE_STRING( self.remove_ctp.__doc__)
         self.ctpall=ctpdict.values()
         parameters.ctp=self.ctpall
@@ -1342,10 +1432,10 @@ class Sample:
             add a nucleus (instance of class nucleus) to the sample
             args:
             - newnucleus: a nucleus instance
-        """
-        
+        """     
         # the name of the isotope become the key
         key=newnucleus.isotope
+        
         DEBUG_MSG("ADD NUCLEUS " + key + " to Sample")
         
         # if there is no nuclei already defined and in case we need to know what was the first nuclei entered in this dictionary
@@ -1403,6 +1493,7 @@ class Nucleus:
     """
     A class to define the nucleus parameters
     """
+
     
     #---------------------------------    
     def __init__(self,isotope = "1H"):
@@ -1414,13 +1505,14 @@ class Nucleus:
         """
         DEBUG_MSG("INIT Nucleus "+isotope)
         self.isotope = isotope
-
+        self.ABORT=False
         self.nucleus=None
         try:
             #read from peiodictable
             self.nucleus = isotopes[isotope]
         except KeyError:
             WRITE_ERROR(isotope+" was not found in the nucleus list - Check the name and/or the mass number")
+            self.ABORT=true
             return
         
             #extract the known parameters
@@ -1456,6 +1548,7 @@ class Nucleus:
          #No nucleus to validate?
         if not self.nucleus:
             WRITE_ERROR("problemo!")
+            self.ABORT=True
             return
 
         spin = self.nucleus["spin"]

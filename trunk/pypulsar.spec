@@ -1,4 +1,4 @@
-__version__='0.1'
+__version__='0.1.1'
 __console__=True
 installpath='D:\\program_files\\Pulsar\\trunk\\'
 imgpath=installpath+'images\\'

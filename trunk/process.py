@@ -43,10 +43,12 @@ def runScript(name):
 #------------------------------------------------------------------------------
     [dirname,filename]=os.path.split(name)
     [scriptname,extension]=os.path.splitext(filename)
-    DEBUG_MSG("process RunScript: "+filename)
+    
+    DEBUG_MSG("Process RunScript: "+filename)
+    
     # Read file
     #-----------
-    WRITE_STRING(' Reading script "'+scriptname+'"\n')              
+    WRITE_STRING('Reading script "'+scriptname+'"')              
     try:
         f=open(name,"r")
         text = f.read()
@@ -97,12 +99,12 @@ def runScript(name):
 
     # create a temporary copy of the executed file
     #---------------------------------------------
-    WRITE_STRING(' Creating temporary script file"'+scriptname+'.tmp"\n')              
+    WRITE_STRING('Creating temporary script file "'+scriptname+'.tmp"')              
     try:
         f=open("workspace\\"+scriptname+".tmp","wb") 
         f.write(text)
     except IOError, (errno, strerror):
-        WRITE_STRING("I/O error(%s): %s" % (errno, strerror))
+        WRITE_ERROR("I/O error(%s): %s" % (errno, strerror))
         f.close()
         return False
 
@@ -146,23 +148,27 @@ def runScript(name):
     #--------------------------------------------
     except PulsarError, e:
         if e.value==1000:
-            WRITE_STRING("***** User asked for process termination *****\n")
+            WRITE_ERROR("User asked for process termination")
             iserror=True
         if e.value==10:
             iserror=True
 
     except:
-        WRITE_STRING("*** Unknown error ***\n")
+        WRITE_ERROR("Unknown error")
         iserror=True
         
     # Remove dialog box
     #------------------
     dlg.Destroy()
     thrd.Stop()
+    
     # delete the temporary file
-    #--------------------------    
-    #os.remove(scriptname+".tmp")
-
+    #--------------------------
+    try:
+        os.remove(scriptname+".tmp")
+    except:
+        pass
+    
     DEBUG_MSG("RunScript Ended")
 
     return not iserror   # return true if there is no error
@@ -197,22 +203,22 @@ class PulsarProcess:
         except SyntaxError, (message,(filename, lineno, offset, line)):
             #atttributes filename, lineno, offset and text for easier access to the details.
             #str() of the exception instance returns only the message. 
-            WRITE_STRING("*** ERROR *** "+message+" script")
-            WRITE_STRING("\tthe error is in line "+str(lineno)+" or above!")
-            WRITE_STRING("\t\t  "+line.replace('\n',''))
-            WRITE_STRING("\t\t"+offset*" "+"^")
+            WRITE_ERROR(message+" script"+ \
+                        "\t\tthe error is in line "+str(lineno)+" or above!"+\
+                        "\t\t\t  "+line.replace('\n','')+\
+                        "\t\t\t" + offset*" "+"^")
             iserror=True
             self.running=False   
 
         except NameError, details:
             #atttributes filename, lineno, offset and text for easier access to the details.
             #str() of the exception instance returns only the message. 
-            WRITE_STRING("*** ERROR *** "+str(details))
+            WRITE_ERROR(str(details))
             iserror=True
             self.running=False   
 
         except:
-            WRITE_STRING("*** ERROR *** non-handled error (please report this to the developpers)")
+            WRITE_ERROR("unhandled error (please report this to the developpers)")
             iserror=True
             self.running=False   
             raise          
